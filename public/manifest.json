@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Page Time Logger",
+  "version": "1.0",
+  "description": "Logs time spent on each URL (active tabs only)",
+  "permissions": ["tabs", "storage", "scripting", "offscreen"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "test_page": "test_page.html", 
+  "action": {
+    "default_title": "Tab Wrap"
+  },
+  "host_permissions": ["<all_urls>"]
+}

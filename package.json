@@ -1,0 +1,21 @@
+{
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16",
+    "tailwindcss-cli": "^0.1.2",
+    "vite": "^7.1.12"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.16",
+    "lucide-react": "^0.548.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "scripts": {
+    "build:tailwind": "npx @tailwindcss/cli -i src/tailwind.css -o public/tailwind-built.css --minify",
+    "build:vite": "vite build --emptyOutDir",
+    "build": "npm run build:tailwind && npm run build:vite"
+  }
+}
