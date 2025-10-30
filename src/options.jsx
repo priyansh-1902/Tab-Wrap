@@ -88,129 +88,64 @@ export default function OptionsPage() {
   async function calculateTabWrapSummary() {
   categorizeEntries(false); // Ensure all entries are categorized first
   const { db, profile } = await getStorage(['db', 'profile']);
-  const summary = {
-    perDay: {},
-    totalSeconds: 0,
-    totalMinutes: 0,
-    totalTabs: 0,
-    highestDay: null,
-    highestMinutes: 0,
-    categoryTotals: {},
-    categoryPercents: [],
-    topCategoryWebsites: {},
-    workCategoryTotals: {}, // new: per-day work totals
-    workStreak: [] // new: best 7-day streak
-  };
-  let totalSeconds = 0;
-  let totalTabs = 0;
-  let highestDay = null;
-  let highestMinutes = 0;
-  const categoryTotals = {};
-  const workCategoryTotals = {};
-  // First pass: calculate totals
-  for (const date of Object.keys(db || {})) {
-    let daySeconds = 0;
-    let dayTabs = 0;
-    let workSeconds = 0;
-    for (const entry of Object.values(db[date] || {})) {
-      daySeconds += entry.time || 0;
-      dayTabs += entry.count || 0;
-      if (entry.category) {
-        if (!categoryTotals[entry.category]) categoryTotals[entry.category] = 0;
-        categoryTotals[entry.category] += entry.time || 0;
-        if (entry.category.toLowerCase().includes('work')) {
-          workSeconds += entry.time || 0;
+    const summary = {
+      perDay: {},
+      totalSeconds: 0,
+      totalMinutes: 0,
+      totalTabs: 0,
+      highestDay: null,
+      highestMinutes: 0,
+      categoryTotals: {},
+      categoryPercents: [],
+      topCategoryWebsites: {}, // New field for unique websites per top category
+    };
+    let totalSeconds = 0;
+    let totalTabs = 0;
+    let highestDay = null;
+    let highestMinutes = 0;
+    const categoryTotals = {};
+    // First pass: calculate totals
+    for (const date of Object.keys(db || {})) {
+      let daySeconds = 0;
+      let dayTabs = 0;
+      for (const entry of Object.values(db[date] || {})) {
+        daySeconds += entry.time || 0;
+        dayTabs += entry.count || 0;
+        if (entry.category) {
+          if (!categoryTotals[entry.category]) categoryTotals[entry.category] = 0;
+          categoryTotals[entry.category] += entry.time || 0;
         }
       }
-    }
-    summary.perDay[date] = {
-      seconds: daySeconds,
-      minutes: Math.floor(daySeconds / 60),
-      tabs: dayTabs
-    };
-    workCategoryTotals[date] = Math.floor(workSeconds / 60); // store minutes
-    totalSeconds += daySeconds;
-    totalTabs += dayTabs;
-    if (daySeconds / 60 > highestMinutes) {
-      highestMinutes = Math.floor(daySeconds / 60);
-      highestDay = date;
-    }
-  }
-  summary.totalSeconds = totalSeconds;
-  summary.totalMinutes = Math.floor(totalSeconds / 60);
-  summary.totalTabs = totalTabs;
-  summary.highestDay = highestDay;
-  summary.highestMinutes = highestMinutes;
-  summary.categoryTotals = categoryTotals;
-  summary.workCategoryTotals = workCategoryTotals;
-  // Calculate percent breakdown
-  summary.categoryPercents = Object.entries(categoryTotals)
-    .map(([cat, sec]) => ({
-      cat,
-      sec,
-      hrs: Math.round(sec / 3600),
-      pct: totalSeconds ? (sec / totalSeconds * 100) : 0
-    }))
-    .sort((a, b) => b.sec - a.sec);
-
-  // Find best 7-day streak for work category
-  // 1. Get all dates, pad missing days
-  const allDates = Object.keys(workCategoryTotals).sort();
-  let dateSet = new Set(allDates);
-  // Find min/max date
-  let minDate = allDates.length ? allDates[0] : null;
-  let maxDate = allDates.length ? allDates[allDates.length - 1] : null;
-  if (minDate && maxDate) {
-    // Pad to 7 days if less than 7
-    let padDates = [];
-    let padCount = 0;
-    let start = new Date(minDate);
-    let end = new Date(maxDate);
-    // Always pad to 7 days window ending at maxDate
-    for (let i = -6; i <= 0; i++) {
-      let d = new Date(end);
-      d.setDate(d.getDate() + i);
-      let ds = d.toISOString().slice(0, 10);
-      padDates.push(ds);
-    }
-    // Fill missing days with 0
-    padDates.forEach(ds => {
-      if (!workCategoryTotals[ds]) workCategoryTotals[ds] = 0;
-    });
-    // Now, get all dates from minDate to maxDate
-    let allDays = [];
-    let d = new Date(minDate);
-    let last = new Date(maxDate);
-    while (d <= last) {
-      allDays.push(d.toISOString().slice(0, 10));
-      d.setDate(d.getDate() + 1);
-    }
-    // If less than 7, pad before minDate
-    while (allDays.length < 7) {
-      let d = new Date(minDate);
-      d.setDate(d.getDate() - (7 - allDays.length));
-      allDays.unshift(d.toISOString().slice(0, 10));
-    }
-    // Fill missing days with 0
-    allDays.forEach(ds => {
-      if (!workCategoryTotals[ds]) workCategoryTotals[ds] = 0;
-    });
-    // Find best 7-day streak
-    let bestSum = -1;
-    let bestStreak = [];
-    for (let i = 0; i <= allDays.length - 7; i++) {
-      let streak = allDays.slice(i, i + 7);
-      let sum = streak.reduce((acc, ds) => acc + (workCategoryTotals[ds] || 0), 0);
-      if (sum > bestSum) {
-        bestSum = sum;
-        bestStreak = streak.map(ds => ({ date: ds, minutes: workCategoryTotals[ds] || 0 }));
+      summary.perDay[date] = {
+        seconds: daySeconds,
+        minutes: Math.floor(daySeconds / 60),
+        tabs: dayTabs
+      };
+      totalSeconds += daySeconds;
+      totalTabs += dayTabs;
+      if (daySeconds / 60 > highestMinutes) {
+        highestMinutes = Math.floor(daySeconds / 60);
+        highestDay = date;
       }
     }
-    summary.workStreak = bestStreak;
-  }
+    summary.totalSeconds = totalSeconds;
+    summary.totalMinutes = Math.floor(totalSeconds / 60);
+    summary.totalTabs = totalTabs;
+    summary.highestDay = highestDay;
+    summary.highestMinutes = highestMinutes;
+    summary.categoryTotals = categoryTotals;
+    // Calculate percent breakdown
+    summary.categoryPercents = Object.entries(categoryTotals)
+      .map(([cat, sec]) => ({
+        cat,
+        sec,
+        hrs: Math.round(sec / 3600),
+        pct: totalSeconds ? (sec / totalSeconds * 100) : 0
+      }))
+      .sort((a, b) => b.sec - a.sec);
 
-  // Get top 100 pages (by time spent) for each top 5 category and save their titles
-  const top5 = summary.categoryPercents.slice(0, 5).map(x => x.cat);
+    // Get top 100 pages (by time spent) for each top 5 category and save their titles
+    const top5 = summary.categoryPercents.slice(0, 5).map(x => x.cat);
     const topPagesByCategory = {};
     for (const cat of top5) {
       topPagesByCategory[cat] = [];

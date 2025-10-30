@@ -35,30 +35,12 @@ const TotalHoursDisplay = ({ hours, unit, label, focusColor }) => {
  * @param {array} streakDays - Array of focus intensity values (0.0 to 1.0).
  * @param {string} timePeriodLabel - Label for the time period (e.g., 'NOV 15 - NOV 21').
  */
-const StreakChart = ({ streakDays, timePeriodLabel }) => {
+const StreakChart = ({ streakDays, timePeriodLabel, streakDates, progress }) => {
   // Normalize streakDays to [0, 1]
-  console.log('Original streak data:', streakDays);
   const max = Math.max(...streakDays, 1);
   const normalized = streakDays.map(v => max ? v / max : 0);
-  console.log('Normalized histogram data:', normalized);
-
-  // Animation state for bars
-  const [animatedHeights, setAnimatedHeights] = React.useState(Array(normalized.length).fill(0));
-  React.useEffect(() => {
-    let start;
-    let duration = 1200;
-    function animate(ts) {
-      if (!start) start = ts;
-      const progress = Math.min((ts - start) / duration, 1);
-      setAnimatedHeights(normalized.map(h => h * progress));
-      if (progress < 1) requestAnimationFrame(animate);
-      else setAnimatedHeights(normalized);
-    }
-    requestAnimationFrame(animate);
-    // Reset on data change
-    return () => setAnimatedHeights(Array(normalized.length).fill(0));
-  }, [streakDays.length, streakDays.join(",")]);
-
+  // Use shared progress for animation
+  const animatedHeights = normalized.map(h => h * (typeof progress === 'number' ? progress : 1));
   return (
     <div className="flex flex-col items-center w-full mt-10">
       <h3 className="text-xl font-bold text-white mb-6 uppercase tracking-wider">
@@ -77,9 +59,7 @@ const StreakChart = ({ streakDays, timePeriodLabel }) => {
             }}
           >
             {/* Date below each bar */}
-            <span className="block text-xs text-gray-300 mt-2 text-center font-semibold">
-              {typeof streakDates !== 'undefined' && streakDates[index]}
-            </span>
+            {/* Removed x-axis ticks/date labels below each bar */}
           </div>
         ))}
         <Trophy className="w-8 h-8 text-yellow-400 ml-4 animate-pulse" />
@@ -93,6 +73,51 @@ const StreakChart = ({ streakDays, timePeriodLabel }) => {
 // --- Main App Component ---
 
 function Work() {
+  // Gemini Nano LanguageModel.promptStreaming for quippy summary
+  const [quippySummary, setQuippySummary] = React.useState('');
+  const [isStreaming, setIsStreaming] = React.useState(false);
+  const quipRef = React.useRef('');
+  React.useEffect(() => {
+    async function fetchQuip() {
+      if (!window.LanguageModel) {
+        setQuippySummary('Keep up the grind!');
+        return;
+      }
+      const available = await window.LanguageModel.availability();
+      if (available === 'unavailable') {
+        setQuippySummary('Keep up the grind!');
+        return;
+      }
+      const session = await window.LanguageModel.create();
+      chrome.storage.local.get(['tabWrapSummary'], async (data) => {
+        const summary = data.tabWrapSummary || {};
+        let workCat = summary.categorySummaries?.['Work and Professional'] !== undefined
+          ? 'Work and Professional'
+          : (summary.categorySummaries?.['Work and Learning'] !== undefined ? 'Work and Learning' : null);
+        const workSummaryText = workCat ? summary.categorySummaries[workCat] : '';
+        if (workSummaryText) {
+          const prompt = workSummaryText + '\nWrite a quippy statement about this work summary, as if talking to the user, in less than 50 characters.';
+          try {
+            setIsStreaming(true);
+            let result = '';
+            for await (const chunk of session.promptStreaming(prompt)) {
+              result += chunk;
+              quipRef.current = result;
+              setQuippySummary(result);
+            }
+            setIsStreaming(false);
+            session.destroy();
+          } catch (e) {
+            setQuippySummary('Keep up the grind!');
+            setIsStreaming(false);
+          }
+        } else {
+          setQuippySummary('Keep up the grind!');
+        }
+      });
+    }
+    fetchQuip();
+  }, []);
   
   // State for work summary
   const [workSummary, setWorkSummary] = React.useState({
@@ -130,35 +155,35 @@ function Work() {
     ? `${new Date(workSummary.workStreak[0].date).toLocaleString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(workSummary.workStreak[workSummary.workStreak.length - 1].date).toLocaleString('en-US', { month: 'short', day: 'numeric' })}`
     : '';
 
-  // Animated total time display
-  const [displayValue, setDisplayValue] = React.useState(0);
+  // Shared animation progress for counter and histogram
+  const [progress, setProgress] = React.useState(0);
   React.useEffect(() => {
-    let start = 0;
-    let end = workSummary.totalMinutes;
+    let start;
     let duration = 1200;
-    let startTime;
     function animate(ts) {
-      if (!startTime) startTime = ts;
-      const progress = Math.min((ts - startTime) / duration, 1);
-      setDisplayValue(Math.floor(progress * end));
-      if (progress < 1) requestAnimationFrame(animate);
-      else setDisplayValue(end);
+      if (!start) start = ts;
+      const prog = Math.min((ts - start) / duration, 1);
+      setProgress(prog);
+      if (prog < 1) requestAnimationFrame(animate);
+      else setProgress(1);
     }
     requestAnimationFrame(animate);
-  }, [workSummary.totalMinutes]);
+    return () => setProgress(0);
+  }, [workSummary.totalMinutes, streakDays.length, streakDays.join(",")]);
 
-  // Format display value
-  let hours = Math.floor(displayValue / 60);
-  let minutes = displayValue % 60;
-  let seconds = Math.floor(displayValue * 60) % 60;
+  // Animated total time display
+  const animatedValue = Math.floor(progress * workSummary.totalMinutes);
+  let hours = Math.floor(animatedValue / 60);
+  let minutes = animatedValue % 60;
+  let seconds = Math.floor(animatedValue * 60) % 60;
   let unit = 'HOURS';
   let shownValue = hours;
-  if (displayValue < 1) {
+  if (animatedValue < 1) {
     unit = 'SECONDS';
-    shownValue = Math.floor(workSummary.totalMinutes * 60);
-  } else if (displayValue < 60) {
+    shownValue = Math.floor(workSummary.totalMinutes * 60 * progress);
+  } else if (animatedValue < 60) {
     unit = 'MINUTES';
-    shownValue = displayValue;
+    shownValue = animatedValue;
   }
 
   return (
@@ -185,10 +210,10 @@ function Work() {
           focusColor={'#4ade80'}
         />
 
-        {/* Small Section Textbox */}
+        {/* Small Section Textbox with Gemini Nano quippy summary (streaming) */}
         <div className="flex flex-col items-center justify-center p-6 bg-white/10 rounded-2xl border border-white/10 shadow-lg w-full max-w-lg mx-auto my-4">
           <p className="text-base sm:text-lg font-semibold text-white text-center">
-            This section can be used to display a summary, motivational message, or any additional info about your work streak. You can customize this text as needed.
+            {isStreaming ? <span>{quippySummary}<span className="animate-pulse">|</span></span> : (quippySummary || 'Keep up the grind!')}
           </p>
         </div>
 
@@ -197,6 +222,7 @@ function Work() {
           streakDays={streakDays}
           timePeriodLabel={timePeriodLabel}
           streakDates={streakDates}
+          progress={progress}
         />
 
       </div>
