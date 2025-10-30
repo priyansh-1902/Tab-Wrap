@@ -200,6 +200,53 @@ export default function OptionsPage() {
       // }
     }
 
+    // Restore workStreak logic for work category (after summaries)
+    let workCat = categoryTotals['Work and Professional'] !== undefined
+      ? 'Work and Professional'
+      : (categoryTotals['Work and Learning'] !== undefined ? 'Work and Learning' : null);
+    let workStreakArr = [];
+    if (workCat) {
+      // Build a map of date -> minutes for work category
+      const dateMinutes = {};
+      for (const date of Object.keys(db || {})) {
+        let minutes = 0;
+        for (const entry of Object.values(db[date] || {})) {
+          if (entry.category === workCat) {
+            minutes += Math.floor((entry.time || 0) / 60);
+          }
+        }
+        dateMinutes[date] = minutes;
+      }
+      // Fill in missing dates with zero minutes
+      const allDates = Object.keys(dateMinutes).sort();
+      if (allDates.length > 0) {
+        const startDate = new Date(allDates[0]);
+        const endDate = new Date(allDates[allDates.length - 1]);
+        const padDates = [];
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const iso = d.toISOString().slice(0, 10);
+          padDates.push(iso);
+        }
+        // Build padded streak array
+        const paddedArr = padDates.map(date => ({ date, minutes: dateMinutes[date] || 0 }));
+        // Find the 7 consecutive days with the maximum total minutes
+        let maxSum = -1, maxIdx = 0;
+        for (let i = 0; i <= paddedArr.length - 7; i++) {
+          const sum = paddedArr.slice(i, i + 7).reduce((acc, x) => acc + x.minutes, 0);
+          if (sum > maxSum) {
+            maxSum = sum;
+            maxIdx = i;
+          }
+        }
+        workStreakArr = paddedArr.slice(maxIdx, maxIdx + 7);
+      } else {
+        workStreakArr = [];
+      }
+      summary.workStreak = workStreakArr;
+      console.log('workStreak:', workStreakArr);
+    } else {
+      summary.workStreak = [];
+    }
     await setStorage({ tabWrapSummary: summary });
     console.log('Tab Wrap summary calculated!');
   }
