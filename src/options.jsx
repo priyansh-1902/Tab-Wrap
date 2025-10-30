@@ -200,18 +200,16 @@ export default function OptionsPage() {
       // }
     }
 
-    // Restore workStreak logic for work category (after summaries)
-    let workCat = categoryTotals['Work and Professional'] !== undefined
-      ? 'Work and Professional'
-      : (categoryTotals['Work and Learning'] !== undefined ? 'Work and Learning' : null);
-    let workStreakArr = [];
-    if (workCat) {
-      // Build a map of date -> minutes for work category
+    // Generalize streak logic for top 5 categories
+    summary.topCategoryStreaks = {};
+    for (const cat of top5) {
+      let streakArr = [];
+      // Build a map of date -> minutes for this category
       const dateMinutes = {};
       for (const date of Object.keys(db || {})) {
         let minutes = 0;
         for (const entry of Object.values(db[date] || {})) {
-          if (entry.category === workCat) {
+          if (entry.category === cat) {
             minutes += Math.floor((entry.time || 0) / 60);
           }
         }
@@ -238,14 +236,15 @@ export default function OptionsPage() {
             maxIdx = i;
           }
         }
-        workStreakArr = paddedArr.slice(maxIdx, maxIdx + 7);
+        streakArr = paddedArr.slice(maxIdx, maxIdx + 7);
       } else {
-        workStreakArr = [];
+        streakArr = [];
       }
-      summary.workStreak = workStreakArr;
-      console.log('workStreak:', workStreakArr);
-    } else {
-      summary.workStreak = [];
+      summary.topCategoryStreaks[cat] = streakArr;
+      if (cat === 'Work and Professional' || cat === 'Work and Learning') {
+        summary.workStreak = streakArr;
+      }
+      console.log(`Streak for ${cat}:`, streakArr);
     }
     await setStorage({ tabWrapSummary: summary });
     console.log('Tab Wrap summary calculated!');
