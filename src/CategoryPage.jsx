@@ -348,18 +348,40 @@ export default function CategoryPage({
             // Layout logic
             const buttonClass = "w-56 h-12 mx-2 rounded-xl font-semibold text-white text-base bg-[#23243a] shadow-md hover:bg-[#2d2e4a] transition-all flex items-center justify-center tracking-wide";
             if (currentIdx === 0 || currentIdx === topCategories.length - 1) {
-              // Centered back button only
-              return (
-                <div className="flex justify-center mt-8">
-                  <button
-                    className={buttonClass}
-                    style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
-                    onClick={() => window.location.href = prevPageUrl}
-                  >
-                    {currentIdx === 0 ? 'Back to Stats' : `Back to previous category${prevCat ? ': ' + prevCat : ''}`}
-                  </button>
-                </div>
-              );
+              if (currentIdx === 0) {
+                // First category: show both back and next buttons
+                return (
+                  <div className="flex justify-center items-center mt-8 gap-6">
+                    <button
+                      className={buttonClass}
+                      style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                      onClick={() => window.location.href = prevPageUrl}
+                    >
+                      Back to Stats
+                    </button>
+                    <button
+                      className={buttonClass}
+                      style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                      onClick={() => window.location.href = nextPageUrl}
+                    >
+                      Go to next top category: {nextCat}
+                    </button>
+                  </div>
+                );
+              } else {
+                // Last category: centered back button only
+                return (
+                  <div className="flex justify-center mt-8">
+                    <button
+                      className={buttonClass}
+                      style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                      onClick={() => window.location.href = prevPageUrl}
+                    >
+                      Back to previous category{prevCat ? ': ' + prevCat : ''}
+                    </button>
+                  </div>
+                );
+              }
             } else {
               // Back button left, next button right
               return (
