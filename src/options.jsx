@@ -35,18 +35,6 @@ export default function OptionsPage() {
       setSelectedCategories(data.selectedCategories || defaultCategories.map(cat => typeof cat === 'string' ? cat : cat.text));
     });
   }, []);
-  // Toggle category selection
-  const handleCategoryClick = (cat) => {
-    let text = typeof cat === 'string' ? cat : cat.text;
-    let updated;
-    if (selectedCategories.includes(text)) {
-      updated = selectedCategories.filter(c => c !== text);
-    } else {
-      updated = [...selectedCategories, text];
-    }
-    setSelectedCategories(updated);
-    chrome.storage.local.set({ selectedCategories: updated });
-  };
 
   const handleDebugToggle = () => {
     const newDebugMode = !debugMode;
@@ -201,6 +189,52 @@ export default function OptionsPage() {
       // }
     }
 
+    // Generalize streak logic for top 5 categories
+    summary.topCategoryStreaks = {};
+    for (const cat of top5) {
+      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
+      let streakArr = [];
+      // Build a map of date -> minutes for this category
+      const dateMinutes = {};
+      for (const date of Object.keys(db || {})) {
+        let seconds = 0;
+        for (const entry of Object.values(db[date] || {})) {
+          if (entry.category === cat) {
+            seconds += entry.time || 0;
+          }
+        }
+        dateMinutes[date] = seconds; // Save time in seconds for streaks
+      }
+      // Fill in missing dates with zero minutes
+      const allDates = Object.keys(dateMinutes).sort();
+      // Always produce a 7-day streak ending at the latest date in the data (or today if data is less than 7 days old)
+      let padDates = [];
+      if (allDates.length > 0) {
+        // Find the latest date in the data
+        const latestDate = new Date(allDates[allDates.length - 1]);
+        // Build the last 7 days ending at latestDate
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(latestDate);
+          d.setDate(d.getDate() - i);
+          padDates.push(d.toISOString().slice(0, 10));
+        }
+        // Build padded streak array
+        const paddedArr = padDates.map(date => ({ date, minutes: dateMinutes[date] || 0 }));
+        streakArr = paddedArr.map(day => ({ date: day.date, seconds: day.minutes })); // Save as seconds
+      } else {
+        // No data, pad with 7 zeros for today and previous 6 days
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          padDates.push(d.toISOString().slice(0, 10));
+        }
+        streakArr = padDates.map(date => ({ date, seconds: 0 }));
+      }
+      summary.topCategoryStreaks[cat] = streakArr;
+      console.log(`Streak for ${cat}:`, streakArr);
+    }
+
     await setStorage({ tabWrapSummary: summary });
     console.log('Tab Wrap summary calculated!');
   }
@@ -348,52 +382,7 @@ export default function OptionsPage() {
           placeholder="Share a bit about your work, interests, or browsing habits..."
         />
       </div>
-  <div style={{ margin: '24px 0', background: 'transparent', borderRadius: 18, padding: 20, color: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
-        <label style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 12, display: 'block', letterSpacing: 1 }}>Categories (click to select):</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
-          {profile.categories.map((cat, idx) => {
-            let emoji = '';
-            let text = '';
-            if (typeof cat === 'string') {
-              const def = defaultCategories.find(dc => dc.text === cat);
-              emoji = def ? def.emoji : '';
-              text = cat;
-            } else {
-              emoji = cat.emoji;
-              text = cat.text;
-            }
-            const selected = selectedCategories.includes(text);
-            return (
-              <span
-                key={text + idx}
-                onClick={() => handleCategoryClick(cat)}
-                style={{
-                  background: selected ? '#fff' : '#f3f3f3',
-                  color: selected ? '#222' : '#444',
-                  borderRadius: 14,
-                  padding: '10px 18px',
-                  fontSize: 17,
-                  display: 'flex',
-                  alignItems: 'center',
-                  boxShadow: selected ? '0 2px 12px rgba(0,0,0,0.10)' : '0 2px 8px rgba(0,0,0,0.08)',
-                  border: selected ? '2px solid #4f8cff' : '1px solid #eee',
-                  minWidth: 90,
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  opacity: selected ? 1 : 0.85,
-                  transition: 'all 0.2s',
-                  userSelect: 'none',
-                  fontWeight: selected ? 600 : 400,
-                  letterSpacing: 0.5,
-                }}
-                title={selected ? 'Included in analytics' : 'Excluded from analytics'}
-              >
-                {emoji && <span style={{ fontSize: 24, marginRight: 10 }}>{emoji}</span>}{text}
-              </span>
-            );
-          })}
-        </div>
-      </div>
+  {/* Category selection removed. All default categories are always used. */}
       <div style={{ marginTop: 32 }}>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
           <button style={{ background: 'white', color: 'rgb(255, 90, 46)', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(46,204,64,0.12)', cursor: 'pointer' }} onClick={saveProfile}>Save Profile</button>

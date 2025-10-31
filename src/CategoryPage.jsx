@@ -224,6 +224,8 @@ export default function CategoryPage({
   quipDefault = 'Keep going!',
   pageTitle = 'CATEGORY SUMMARY'
 }) {
+
+    console.log('color:', focusColor);
   // Icon mapping for categories
   const categoryIcons = {
     Work: Briefcase,
