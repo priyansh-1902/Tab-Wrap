@@ -6,7 +6,7 @@ import CategoryPage from './CategoryPage.jsx';
 const root = document.getElementById('root');
 createRoot(root).render(
   <CategoryPage
-    categoryNames={["Hobbies / Creativity"]}
+    categoryNames={["Hobbies"]}
     label="SPENT ON HOBBIES/CREATIVITY"
     focusColor="#a78bfa"
     streakTitle="TOP HOBBIES/CREATIVITY STREAK"

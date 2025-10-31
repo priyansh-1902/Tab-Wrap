@@ -5,7 +5,7 @@ import CategoryPage from './CategoryPage.jsx';
 const root = document.getElementById('root');
 createRoot(root).render(
   <CategoryPage
-    categoryNames={["Community / Volunteering"]}
+    categoryNames={["Community"]}
     label="SPENT ON COMMUNITY"
     focusColor="#fbbf24"
     streakTitle="COMMUNITY STREAK"

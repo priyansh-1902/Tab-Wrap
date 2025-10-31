@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { Trophy, Clock } from 'lucide-react';
+import { Trophy, Clock, Briefcase, DollarSign, Palette, Sun, HeartPulse, MessageCircle, Handshake, Clapperboard, ShoppingCart, Newspaper, Plane, HelpCircle } from 'lucide-react';
 
 /**
  * General hook for category summary, streak, and quippy summary.
@@ -228,6 +228,21 @@ export default function CategoryPage({
   pageTitle = 'CATEGORY SUMMARY',
   bgColors = ['#a78bfa', '#fbbf24', '#38bdf8']
 }) {
+  // Icon mapping for categories
+  const categoryIcons = {
+    work: Briefcase,
+    finance: DollarSign,
+    hobbies: Palette,
+    spirituality: Sun,
+    health: HeartPulse,
+    social: MessageCircle,
+    community: Handshake,
+    entertainment: Clapperboard,
+    shopping: ShoppingCart,
+    news: Newspaper,
+    travel: Plane,
+    default: HelpCircle,
+  };
   // Top 5 categories state
   const [topCategories, setTopCategories] = useState([]);
   useEffect(() => {
@@ -295,10 +310,17 @@ export default function CategoryPage({
 
       {/* Main Content Card - Simplified Layout */}
       <div className="w-full max-w-xl p-6 md:p-8 rounded-3xl backdrop-filter backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl relative space-y-12">
-        {/* Title */}
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-white uppercase tracking-widest drop-shadow-lg">
-          {pageTitle}
-        </h1>
+        {/* Category Icon and Title */}
+        <div className="flex flex-col items-center mb-2">
+          {(() => {
+            console.log('Rendering icon for category:', label, categoryNames);
+            const IconComponent = categoryIcons[label] || categoryIcons.default;
+            return <IconComponent className="w-14 h-14 mb-2" style={{ color: focusColor }} aria-label={label + ' icon'} />;
+          })()}
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-white uppercase tracking-widest drop-shadow-lg">
+            {pageTitle}
+          </h1>
+        </div>
 
         {/* 1. Hours Display Component */}
         <TotalHoursDisplay

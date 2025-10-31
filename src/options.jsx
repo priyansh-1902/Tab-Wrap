@@ -2,18 +2,18 @@
 import React, { useState, useEffect } from 'react';
 
 const defaultCategories = [
-  { text: "Work and Learning", emoji: "💼" },
+  { text: "Work", emoji: "💼" },
   { text: "Finance", emoji: "💰" },
-  { text: "Hobbies / Creativity", emoji: "🎨" },
+  { text: "Hobbies", emoji: "🎨" },
   { text: "Spirituality", emoji: "🧘" },
-  { text: "Health / Fitness", emoji: "🏋️" },
-  { text: "Social Media / Messaging", emoji: "💬" },
-  { text: "Community / Volunteering", emoji: "🤝" },
-  { text: "Entertainment / Gaming", emoji: "🎬" },
+  { text: "Health", emoji: "🏋️" },
+  { text: "Social Media ", emoji: "💬" },
+  { text: "Community", emoji: "🤝" },
+  { text: "Entertainment", emoji: "🎬" },
   { text: "Shopping", emoji: "🛒" },
   { text: "News", emoji: "📰" },
   { text: "Travel", emoji: "✈️" },
-  { text: "Misc / Uncategorized", emoji: "❓" }
+  { text: "Misc", emoji: "❓" }
 ];
 
 export default function OptionsPage() {
@@ -411,17 +411,9 @@ export default function OptionsPage() {
   <div style={{ margin: '24px 0', background: 'transparent', borderRadius: 18, padding: 20, color: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
         <label style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 12, display: 'block', letterSpacing: 1 }}>Categories (click to select):</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
-          {profile.categories.map((cat, idx) => {
-            let emoji = '';
-            let text = '';
-            if (typeof cat === 'string') {
-              const def = defaultCategories.find(dc => dc.text === cat);
-              emoji = def ? def.emoji : '';
-              text = cat;
-            } else {
-              emoji = cat.emoji;
-              text = cat.text;
-            }
+          {defaultCategories.map((cat, idx) => {
+            const emoji = cat.emoji;
+            const text = cat.text;
             const selected = selectedCategories.includes(text);
             return (
               <span

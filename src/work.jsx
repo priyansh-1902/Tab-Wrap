@@ -6,7 +6,7 @@ import CategoryPage from './CategoryPage.jsx';
 const root = document.getElementById('root');
 createRoot(root).render(
   <CategoryPage
-    categoryNames={["Work and Learning"]}
+    categoryNames={["Work"]}
     label="SPENT ON WORK"
     focusColor="#4ade80"
     streakTitle="WORK STREAK"

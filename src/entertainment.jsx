@@ -4,7 +4,7 @@ import CategoryPage from './CategoryPage.jsx';
 
 createRoot(root).render(
   <CategoryPage
-      categoryNames={["Entertainment / Gaming"]}
+      categoryNames={["Entertainment"]}
       label="SPENT ON ENTERTAINMENT"
       focusColor="#f472b6"
       streakTitle="ENTERTAINMENT STREAK"

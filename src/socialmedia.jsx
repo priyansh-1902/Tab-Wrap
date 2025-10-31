@@ -7,7 +7,7 @@ import CategoryPage from './CategoryPage.jsx';
 const root = document.getElementById('root');
 createRoot(root).render(
   <CategoryPage
-    categoryNames={["Social Media / Messaging"]}
+    categoryNames={["Social Media"]}
     label="SPENT ON SOCIAL MEDIA"
     focusColor="#f472b6"
     streakTitle="TOP SOCIAL MEDIA STREAK"
