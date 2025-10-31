@@ -6,7 +6,7 @@ createRoot(root).render(
   <CategoryPage
     categoryNames={["News"]}
     label="SPENT ON NEWS"
-    focusColor="#38bdf8"
+    focusColor="#64748b"
     streakTitle="NEWS STREAK"
     streakBarColor="bg-blue-400"
     streakHoverColor="hover:bg-blue-300"

@@ -6,9 +6,9 @@ import CategoryPage from './CategoryPage.jsx';
 const root = document.getElementById('root');
 createRoot(root).render(
   <CategoryPage
-    categoryNames={["Fitness"]}
+    categoryNames={["Health"]}
     label="SPENT ON FITNESS"
-    focusColor="#38bdf8"
+    focusColor="#ef4444"
     streakTitle="TOP FITNESS STREAK"
     streakBarColor="bg-blue-400"
     streakHoverColor="hover:bg-blue-300"

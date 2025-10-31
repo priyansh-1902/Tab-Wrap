@@ -8,7 +8,7 @@ createRoot(root).render(
   <CategoryPage
     categoryNames={["Hobbies"]}
     label="SPENT ON HOBBIES/CREATIVITY"
-    focusColor="#a78bfa"
+    focusColor="#facc15"
     streakTitle="TOP HOBBIES/CREATIVITY STREAK"
     streakBarColor="bg-indigo-400"
     streakHoverColor="hover:bg-indigo-300"

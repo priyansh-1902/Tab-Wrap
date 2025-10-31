@@ -8,7 +8,7 @@ createRoot(root).render(
   <CategoryPage
     categoryNames={["Finance"]}
     label="SPENT ON FINANCE"
-    focusColor="#f59e42"
+    focusColor="#22c55e"
     streakTitle="TOP FINANCE STREAK"
     streakBarColor="bg-yellow-500"
     streakHoverColor="hover:bg-yellow-400"

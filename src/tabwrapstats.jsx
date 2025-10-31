@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MessageSquare, Paintbrush, Gamepad2, HeartHandshake, Zap, Sparkles } from 'lucide-react'; // Added more icons
-
-// --- ICON MAP for categories ---
-const CATEGORY_ICONS = {
-  'Work and Learning': <Clock size={18} />,
-  'Social Media / Messaging': <MessageSquare size={18} />,
-  'Hobbies / Creativity': <Paintbrush size={18} />,
-  'Entertainment / Gaming': <Gamepad2 size={18} />,
-  'Spirituality': <HeartHandshake size={18} />,
-  // Add more as needed
-};
-
-// --- Sub-Components ---
+import { Clock, MessageSquare, Paintbrush, Gamepad2, HeartHandshake, Zap, Sparkles, Trophy, Briefcase, DollarSign, Palette, Sun, HeartPulse, Handshake, Clapperboard, ShoppingCart, Newspaper, Plane, HelpCircle } from 'lucide-react';
 
 /**
  * Animated Donut Chart for activity breakdown.
@@ -210,18 +198,59 @@ function TabWrapStats() {
   }
 
   // Prepare top 5 categories for breakdown
+  // Import defaultCategories from options.jsx
+  const defaultCategories = [
+    { text: "Work", color: "#7e22ce" },
+    { text: "Finance", color: "#22c55e" },
+    { text: "Hobbies", color: "#facc15" },
+    { text: "Spirituality", color: "#22d3ee" },
+    { text: "Health", color: "#ef4444" },
+    { text: "Social Media", color: "#ff6347" },
+    { text: "Community", color: "#a259ff" },
+    { text: "Entertainment", color: "#eab308" },
+    { text: "Shopping", color: "#38bdf8" },
+    { text: "News", color: "#64748b" },
+    { text: "Travel", color: "#f472b6" },
+    { text: "Misc", color: "#f472b6" }
+  ];
+
+  const categoryIcons = {
+    Work: Briefcase,
+    Finance: DollarSign,
+    Hobbies: Palette,
+    Spirituality: Sun,
+    Health: HeartPulse,
+    Social: MessageSquare,
+    Community: Handshake,
+    Entertainment: Clapperboard,
+    Shopping: ShoppingCart,
+    News: Newspaper,
+    Travel: Plane,
+    default: HelpCircle,
+  };
+
+  function getCategoryColor(name) {
+    // Try exact match first
+    const found = defaultCategories.find(cat => cat.text === name);
+    if (found) return found.color;
+    // Try partial match for cases like "Work and Learning"
+    for (const cat of defaultCategories) {
+      if (name.toLowerCase().includes(cat.text.toLowerCase())) return cat.color;
+    }
+    return '#38bdf8'; // fallback
+  }
+
   const top5 = (summary.categoryPercents || []).slice(0, 5);
-  const activityBreakdown = top5.map(cat => ({
-    name: cat.cat,
-    percentage: cat.pct,
-    icon: CATEGORY_ICONS[cat.cat] || <Zap size={18} />,
-    color: cat.cat === 'Work and Learning' ? '#7e22ce'
-      : cat.cat === 'Social Media / Messaging' ? '#ff6347'
-      : cat.cat === 'Hobbies / Creativity' ? '#facc15'
-      : cat.cat === 'Entertainment / Gaming' ? '#ef4444'
-      : cat.cat === 'Spirituality' ? '#22d3ee'
-      : '#38bdf8'
-  }));
+    const activityBreakdown = top5.map(cat => {
+      const key = cat.cat.split(' ')[0];
+      const IconComponent = categoryIcons[key] || Zap;
+      return {
+        name: cat.cat,
+        percentage: cat.pct,
+        IconComponent,
+        color: getCategoryColor(cat.cat)
+      };
+    });
 
   return (
     <div className="min-h-screen p-4 sm:p-8 flex flex-col items-center font-sans" style={{ backgroundColor: '#0a0a0a' }}>
@@ -271,7 +300,7 @@ function TabWrapStats() {
               key={index}
               name={category.name}
               percentage={category.percentage}
-              icon={category.icon}
+              icon={<category.IconComponent size={18} />}
               color={category.color}
             />
           ))}

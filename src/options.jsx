@@ -2,19 +2,20 @@
 import React, { useState, useEffect } from 'react';
 
 const defaultCategories = [
-  { text: "Work", emoji: "💼" },
-  { text: "Finance", emoji: "💰" },
-  { text: "Hobbies", emoji: "🎨" },
-  { text: "Spirituality", emoji: "🧘" },
-  { text: "Health", emoji: "🏋️" },
-  { text: "Social Media ", emoji: "💬" },
-  { text: "Community", emoji: "🤝" },
-  { text: "Entertainment", emoji: "🎬" },
-  { text: "Shopping", emoji: "🛒" },
-  { text: "News", emoji: "📰" },
-  { text: "Travel", emoji: "✈️" },
-  { text: "Misc", emoji: "❓" }
+  { text: "Work", emoji: "💼", color: "#7e22ce" }, // purple
+  { text: "Finance", emoji: "💰", color: "#22c55e" }, // green
+  { text: "Hobbies", emoji: "🎨", color: "#facc15" }, // yellow
+  { text: "Spirituality", emoji: "🧘", color: "#22d3ee" }, // teal
+  { text: "Health", emoji: "🏋️", color: "#ef4444" }, // red
+  { text: "Social Media", emoji: "💬", color: "#ff6347" }, // bright red
+  { text: "Community", emoji: "🤝", color: "#a259ff" }, // violet
+  { text: "Entertainment", emoji: "🎬", color: "#eab308" }, // gold
+  { text: "Shopping", emoji: "🛒", color: "#38bdf8" }, // blue
+  { text: "News", emoji: "📰", color: "#64748b" }, // slate
+  { text: "Travel", emoji: "✈️", color: "#f472b6" }, // pink
+  { text: "Misc", emoji: "❓", color: "#d1d5db" } // gray
 ];
+
 
 export default function OptionsPage() {
   const [db, setDb] = useState({});
@@ -64,7 +65,7 @@ export default function OptionsPage() {
 
   const saveProfile = () => {
     chrome.storage.local.set({ profile }, async () => {
-      await categorizeEntries(true);
+      await categorizeEntries(false);
     });
   };
 
@@ -88,14 +89,6 @@ export default function OptionsPage() {
   async function calculateTabWrapSummary() {
   categorizeEntries(false); // Ensure all entries are categorized first
   const { db, profile } = await getStorage(['db', 'profile']);
-  // Remove all entries categorized into a category starting with lowercase 'misc'
-  for (const date of Object.keys(db || {})) {
-    for (const [url, entry] of Object.entries(db[date] || {})) {
-      if (entry.category && entry.category.toLowerCase().startsWith('misc')) {
-        delete db[date][url];
-      }
-    }
-  }
     const summary = {
       perDay: {},
       totalSeconds: 0,
@@ -119,7 +112,7 @@ export default function OptionsPage() {
       for (const entry of Object.values(db[date] || {})) {
         daySeconds += entry.time || 0;
         dayTabs += entry.count || 0;
-        if (entry.category && entry.category !== 'Misc / Uncategorized' && entry.category !== 'miscellaneous') {
+        if (entry.category) {
           if (!categoryTotals[entry.category]) categoryTotals[entry.category] = 0;
           categoryTotals[entry.category] += entry.time || 0;
         }
@@ -144,7 +137,6 @@ export default function OptionsPage() {
     summary.categoryTotals = categoryTotals;
     // Calculate percent breakdown
     summary.categoryPercents = Object.entries(categoryTotals)
-      .filter(([cat]) => cat !== 'Misc / Uncategorized' && cat !== 'miscellaneous')
       .map(([cat, sec]) => ({
         cat,
         sec,
@@ -154,19 +146,15 @@ export default function OptionsPage() {
       .sort((a, b) => b.sec - a.sec);
 
     // Get top 100 pages (by time spent) for each top 5 category and save their titles
-    const top5 = summary.categoryPercents
-      .filter(x => x.cat !== 'Misc / Uncategorized' && x.cat !== 'miscellaneous')
-      .slice(0, 5)
-      .map(x => x.cat);
+    const top5 = summary.categoryPercents.slice(0, 5).map(x => x.cat);
     const topPagesByCategory = {};
     for (const cat of top5) {
-      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
       topPagesByCategory[cat] = [];
     }
     // Collect all entries for each top category
     for (const date of Object.keys(db || {})) {
       for (const [url, entry] of Object.entries(db[date] || {})) {
-        if ((top5.includes(entry.category)) && entry.category !== 'Misc / Uncategorized' && entry.category !== 'miscellaneous') {
+        if (top5.includes(entry.category)) {
           topPagesByCategory[entry.category].push({
             title: entry.title || url,
             time: entry.time || 0,
@@ -178,7 +166,6 @@ export default function OptionsPage() {
     // Sort and keep top 100 by time spent
     summary.categorySummaries = {};
     for (const cat of top5) {
-      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
       topPagesByCategory[cat] = topPagesByCategory[cat]
         .sort((a, b) => b.time - a.time)
         .slice(0, 100);
@@ -214,53 +201,6 @@ export default function OptionsPage() {
       // }
     }
 
-    // Generalize streak logic for top 5 categories
-    summary.topCategoryStreaks = {};
-    for (const cat of top5) {
-      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
-      let streakArr = [];
-      // Build a map of date -> minutes for this category
-      const dateMinutes = {};
-      for (const date of Object.keys(db || {})) {
-        let seconds = 0;
-        for (const entry of Object.values(db[date] || {})) {
-          if (entry.category === cat) {
-            seconds += entry.time || 0;
-          }
-        }
-        dateMinutes[date] = seconds; // Save time in seconds for streaks
-      }
-      // Fill in missing dates with zero minutes
-      const allDates = Object.keys(dateMinutes).sort();
-      if (allDates.length > 0) {
-        const startDate = new Date(allDates[0]);
-        const endDate = new Date(allDates[allDates.length - 1]);
-        const padDates = [];
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-          const iso = d.toISOString().slice(0, 10);
-          padDates.push(iso);
-        }
-        // Build padded streak array
-        const paddedArr = padDates.map(date => ({ date, minutes: dateMinutes[date] || 0 }));
-        // Find the 7 consecutive days with the maximum total seconds
-        let maxSum = -1, maxIdx = 0;
-        for (let i = 0; i <= paddedArr.length - 7; i++) {
-          const sum = paddedArr.slice(i, i + 7).reduce((acc, x) => acc + x.minutes, 0);
-          if (sum > maxSum) {
-            maxSum = sum;
-            maxIdx = i;
-          }
-        }
-        streakArr = paddedArr.slice(maxIdx, maxIdx + 7).map(day => ({ date: day.date, seconds: day.minutes })); // Save as seconds
-      } else {
-        streakArr = [];
-      }
-      summary.topCategoryStreaks[cat] = streakArr;
-      if (cat === 'Work and Professional' || cat === 'Work and Learning') {
-        summary.workStreak = streakArr;
-      }
-      console.log(`Streak for ${cat}:`, streakArr);
-    }
     await setStorage({ tabWrapSummary: summary });
     console.log('Tab Wrap summary calculated!');
   }
@@ -411,9 +351,17 @@ export default function OptionsPage() {
   <div style={{ margin: '24px 0', background: 'transparent', borderRadius: 18, padding: 20, color: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
         <label style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 12, display: 'block', letterSpacing: 1 }}>Categories (click to select):</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
-          {defaultCategories.map((cat, idx) => {
-            const emoji = cat.emoji;
-            const text = cat.text;
+          {profile.categories.map((cat, idx) => {
+            let emoji = '';
+            let text = '';
+            if (typeof cat === 'string') {
+              const def = defaultCategories.find(dc => dc.text === cat);
+              emoji = def ? def.emoji : '';
+              text = cat;
+            } else {
+              emoji = cat.emoji;
+              text = cat.text;
+            }
             const selected = selectedCategories.includes(text);
             return (
               <span

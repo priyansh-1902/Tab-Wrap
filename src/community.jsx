@@ -7,7 +7,7 @@ createRoot(root).render(
   <CategoryPage
     categoryNames={["Community"]}
     label="SPENT ON COMMUNITY"
-    focusColor="#fbbf24"
+    focusColor="#a259ff"
     streakTitle="COMMUNITY STREAK"
     streakBarColor="bg-yellow-400"
     streakHoverColor="hover:bg-yellow-300"

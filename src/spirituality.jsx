@@ -8,7 +8,7 @@ createRoot(root).render(
   <CategoryPage
     categoryNames={["Spirituality"]}
     label="SPENT ON SPIRITUALITY"
-    focusColor="#34d399"
+    focusColor="#22d3ee"
     streakTitle="TOP SPIRITUALITY STREAK"
     streakBarColor="bg-green-400"
     streakHoverColor="hover:bg-green-300"

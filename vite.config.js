@@ -14,11 +14,11 @@ export default defineConfig({
         work: './work.html',
         finance: './finance.html',
         hobbies: './hobbies.html',
-        socialmedia: './socialmedia.html',
+        social: './social.html',
         shopping: './shopping.html',
         entertainment: './entertainment.html',
         spirituality: './spirituality.html',
-        fitness: './fitness.html',
+        health: './health.html',
         community: './community.html',
         news: './news.html',
         travel: './travel.html'

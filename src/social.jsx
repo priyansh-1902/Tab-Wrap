@@ -9,7 +9,7 @@ createRoot(root).render(
   <CategoryPage
     categoryNames={["Social Media"]}
     label="SPENT ON SOCIAL MEDIA"
-    focusColor="#f472b6"
+    focusColor="#ff6347"
     streakTitle="TOP SOCIAL MEDIA STREAK"
     streakBarColor="bg-pink-400"
     streakHoverColor="hover:bg-pink-300"

@@ -6,7 +6,7 @@ createRoot(root).render(
   <CategoryPage
       categoryNames={["Entertainment"]}
       label="SPENT ON ENTERTAINMENT"
-      focusColor="#f472b6"
+      focusColor="#eab308"
       streakTitle="ENTERTAINMENT STREAK"
       streakBarColor="bg-pink-400"
       streakHoverColor="hover:bg-pink-300"

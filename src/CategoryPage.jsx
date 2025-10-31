@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { Trophy, Clock, Briefcase, DollarSign, Palette, Sun, HeartPulse, MessageCircle, Handshake, Clapperboard, ShoppingCart, Newspaper, Plane, HelpCircle } from 'lucide-react';
+import { Trophy, Clock, Briefcase, DollarSign, Palette, Sun, HeartPulse, MessageSquare, Handshake, Clapperboard, ShoppingCart, Newspaper, Plane, HelpCircle } from 'lucide-react';
 
 /**
  * General hook for category summary, streak, and quippy summary.
@@ -184,7 +184,7 @@ function TotalHoursDisplay({ hours, unit, label, focusColor, iconColor = '#4ade8
  * @param {string} timePeriodLabel - Label for the time period (e.g., 'NOV 15 - NOV 21').
  * @param {string} barColor - Tailwind color class for bars.
  */
-function StreakChart({ streakDays, timePeriodLabel, streakDates, progress, barColor = 'bg-purple-500', hoverColor = 'hover:bg-purple-400', glowColor = 'rgba(168, 85, 247, 0.8)', title = 'TOP FOCUS STREAK' }) {
+function StreakChart({ streakDays, timePeriodLabel, streakDates, progress, title = 'TOP FOCUS STREAK', color = '#4ade80', glowColor }) {
   const max = Math.max(...streakDays, 1);
   const normalized = streakDays.map(v => max ? v / max : 0);
   const animatedHeights = normalized.map(h => h * (typeof progress === 'number' ? progress : 1));
@@ -197,17 +197,18 @@ function StreakChart({ streakDays, timePeriodLabel, streakDates, progress, barCo
         {animatedHeights.map((intensity, index) => (
           <div 
             key={index} 
-            className={`flex-1 rounded-t-lg ${barColor} ${hoverColor} transition-all duration-300 cursor-pointer`}
+            className="flex-1 rounded-t-lg transition-all duration-300 cursor-pointer"
             style={{ 
               height: `${intensity * 100}px`,
               minHeight: '4px',
-              boxShadow: `0 0 10px ${intensity > 0.8 ? glowColor : 'transparent'}`,
+              backgroundColor: color,
+              boxShadow: `0 0 10px ${intensity > 0.8 ? (glowColor || color) : 'transparent'}`,
               transition: 'height 0.3s cubic-bezier(0.4,0,0.2,1)',
             }}
           >
           </div>
         ))}
-        <Trophy className="w-8 h-8 text-yellow-400 ml-4 animate-pulse" />
+  <Trophy className="w-8 h-8 ml-4 animate-pulse" style={{ color }} />
       </div>
       <p className="text-sm text-gray-400 mt-4 font-semibold tracking-wide">{timePeriodLabel}</p>
     </div>
@@ -220,27 +221,22 @@ export default function CategoryPage({
   label = '',
   focusColor = '#4ade80',
   streakTitle = 'TOP CATEGORY STREAK',
-  streakBarColor = 'bg-purple-500',
-  streakHoverColor = 'hover:bg-purple-400',
-  streakGlowColor = 'rgba(168, 85, 247, 0.8)',
-  summaryType = '',
   quipDefault = 'Keep going!',
-  pageTitle = 'CATEGORY SUMMARY',
-  bgColors = ['#a78bfa', '#fbbf24', '#38bdf8']
+  pageTitle = 'CATEGORY SUMMARY'
 }) {
   // Icon mapping for categories
   const categoryIcons = {
-    work: Briefcase,
-    finance: DollarSign,
-    hobbies: Palette,
-    spirituality: Sun,
-    health: HeartPulse,
-    social: MessageCircle,
-    community: Handshake,
-    entertainment: Clapperboard,
-    shopping: ShoppingCart,
-    news: Newspaper,
-    travel: Plane,
+    Work: Briefcase,
+    Finance: DollarSign,
+    Hobbies: Palette,
+    Spirituality: Sun,
+    Health: HeartPulse,
+    Social: MessageSquare,
+    Community: Handshake,
+    Entertainment: Clapperboard,
+    Shopping: ShoppingCart,
+    News: Newspaper,
+    Travel: Plane,
     default: HelpCircle,
   };
   // Top 5 categories state
@@ -277,13 +273,13 @@ export default function CategoryPage({
   } = useCategorySummary({
     categoryNames,
     label,
-    focusColor,
+    focusColor: focusColor,
     streakKey: '',
     streakTitle,
-    streakBarColor,
-    streakHoverColor,
-    streakGlowColor,
-    summaryType,
+    streakBarColor: undefined,
+    streakHoverColor: undefined,
+    streakGlowColor: undefined,
+    summaryType: undefined,
     quipDefault
   });
 
@@ -293,20 +289,7 @@ export default function CategoryPage({
   return (
     <div className="min-h-screen p-4 sm:p-8 flex items-center justify-center bg-gray-900 font-sans">
       {/* Background Effect: Cosmic Blur */}
-      <div className="absolute inset-0 overflow-hidden -z-10">
-        <div
-          style={{ backgroundColor: bgColors[0] }}
-          className="absolute top-10 left-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"
-        ></div>
-        <div
-          style={{ backgroundColor: bgColors[1] }}
-          className="absolute top-1/2 right-0 w-80 h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"
-        ></div>
-        <div
-          style={{ backgroundColor: bgColors[2] }}
-          className="absolute bottom-0 left-0 w-72 h-72 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"
-        ></div>
-      </div>
+      {/* Removed bgColors overlays as requested */}
 
       {/* Main Content Card - Simplified Layout */}
       <div className="w-full max-w-xl p-6 md:p-8 rounded-3xl backdrop-filter backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl relative space-y-12">
@@ -314,7 +297,10 @@ export default function CategoryPage({
         <div className="flex flex-col items-center mb-2">
           {(() => {
             console.log('Rendering icon for category:', label, categoryNames);
-            const IconComponent = categoryIcons[label] || categoryIcons.default;
+            const rawName = (categoryNames && categoryNames.length ? categoryNames[0] : label) || 'default';
+            const firstWord = rawName.split('/')[0].split(' ')[0];
+            const key = firstWord ? (firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase()) : 'default';
+            const IconComponent = categoryIcons[key] || categoryIcons.default;
             return <IconComponent className="w-14 h-14 mb-2" style={{ color: focusColor }} aria-label={label + ' icon'} />;
           })()}
           <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-white uppercase tracking-widest drop-shadow-lg">
@@ -328,6 +314,7 @@ export default function CategoryPage({
           unit={unit}
           label={label}
           focusColor={focusColor}
+          iconColor={focusColor}
         />
 
         {/* Small Section Textbox with Gemini Nano quippy summary (streaming) */}
@@ -343,10 +330,11 @@ export default function CategoryPage({
           timePeriodLabel={timePeriodLabel}
           streakDates={streakDates}
           progress={progress}
-          barColor={streakBarColor}
-          hoverColor={streakHoverColor}
-          glowColor={streakGlowColor}
+          barColor={undefined}
+          hoverColor={undefined}
+          glowColor={focusColor}
           title={streakTitle}
+          color={focusColor}
         />
 
         {/* Button to go to next top category page, only if not last in top 5 */}
