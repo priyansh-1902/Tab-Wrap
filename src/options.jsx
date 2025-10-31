@@ -207,13 +207,13 @@ export default function OptionsPage() {
       // Build a map of date -> minutes for this category
       const dateMinutes = {};
       for (const date of Object.keys(db || {})) {
-        let minutes = 0;
+        let seconds = 0;
         for (const entry of Object.values(db[date] || {})) {
           if (entry.category === cat) {
-            minutes += Math.floor((entry.time || 0) / 60);
+            seconds += entry.time || 0;
           }
         }
-        dateMinutes[date] = minutes;
+        dateMinutes[date] = seconds; // Save time in seconds for streaks
       }
       // Fill in missing dates with zero minutes
       const allDates = Object.keys(dateMinutes).sort();
@@ -227,7 +227,7 @@ export default function OptionsPage() {
         }
         // Build padded streak array
         const paddedArr = padDates.map(date => ({ date, minutes: dateMinutes[date] || 0 }));
-        // Find the 7 consecutive days with the maximum total minutes
+        // Find the 7 consecutive days with the maximum total seconds
         let maxSum = -1, maxIdx = 0;
         for (let i = 0; i <= paddedArr.length - 7; i++) {
           const sum = paddedArr.slice(i, i + 7).reduce((acc, x) => acc + x.minutes, 0);
@@ -236,7 +236,7 @@ export default function OptionsPage() {
             maxIdx = i;
           }
         }
-        streakArr = paddedArr.slice(maxIdx, maxIdx + 7);
+        streakArr = paddedArr.slice(maxIdx, maxIdx + 7).map(day => ({ date: day.date, seconds: day.minutes })); // Save as seconds
       } else {
         streakArr = [];
       }

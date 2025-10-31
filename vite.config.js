@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import CategoryPage from './src/CategoryPage';
 
 export default defineConfig({
   plugins: [react()],
@@ -19,8 +20,8 @@ export default defineConfig({
         spirituality: './spirituality.html',
         fitness: './fitness.html',
         community: './community.html',
-  news: './news.html',
-  travel: './travel.html'
+        news: './news.html',
+        travel: './travel.html'
 
 
       }

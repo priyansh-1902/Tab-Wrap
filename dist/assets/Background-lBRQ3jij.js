@@ -1,4 +1,4 @@
-import{j as t}from"./client-DUeHcXHK.js";function i(){return t.jsx("style",{children:`
+import{j as t}from"./client-BCr4-QWM.js";function i(){return t.jsx("style",{children:`
       html, body {
         background: #0b0b0b !important;
         margin: 0 !important;
