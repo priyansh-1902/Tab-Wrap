@@ -228,6 +228,28 @@ export default function CategoryPage({
   pageTitle = 'CATEGORY SUMMARY',
   bgColors = ['#a78bfa', '#fbbf24', '#38bdf8']
 }) {
+  // Top 5 categories state
+  const [topCategories, setTopCategories] = useState([]);
+  useEffect(() => {
+    chrome.storage.local.get(['tabWrapSummary'], (data) => {
+      const summary = data.tabWrapSummary || {};
+      const sorted = Array.isArray(summary.categoryPercents) ? summary.categoryPercents.slice(0, 5) : [];
+      setTopCategories(sorted.map(cat => cat.cat));
+    });
+  }, [categoryNames]);
+
+  // Determine current and next category
+  let currentCat = categoryNames && categoryNames.length ? categoryNames[0] : label;
+  const currentIdx = topCategories.findIndex(cat => cat === currentCat);
+  const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % topCategories.length : 0;
+  const nextCat = topCategories[nextIdx] || '';
+  let nextPageName = '';
+  if (nextCat.includes('/')) {
+    nextPageName = nextCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
+  } else {
+    nextPageName = nextCat.split(' ')[0].toLowerCase();
+  }
+  const nextPageUrl = `${nextPageName}.html`;
   const {
     quippySummary,
     isStreaming,
@@ -304,6 +326,63 @@ export default function CategoryPage({
           glowColor={streakGlowColor}
           title={streakTitle}
         />
+
+        {/* Button to go to next top category page, only if not last in top 5 */}
+        {/* Back and Next buttons for category navigation */}
+        {topCategories.length > 0 && (
+          (() => {
+            const prevIdx = currentIdx - 1;
+            let prevCat = prevIdx >= 0 ? topCategories[prevIdx] : null;
+            let prevPageName = '';
+            let prevPageUrl = '';
+            if (currentIdx === 0) {
+              prevPageUrl = 'tabwrapstats.html';
+            } else if (prevCat) {
+              if (prevCat.includes('/')) {
+                prevPageName = prevCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
+              } else {
+                prevPageName = prevCat.split(' ')[0].toLowerCase();
+              }
+              prevPageUrl = `${prevPageName}.html`;
+            }
+            // Layout logic
+            const buttonClass = "w-56 h-12 mx-2 rounded-xl font-semibold text-white text-base bg-[#23243a] shadow-md hover:bg-[#2d2e4a] transition-all flex items-center justify-center tracking-wide";
+            if (currentIdx === 0 || currentIdx === topCategories.length - 1) {
+              // Centered back button only
+              return (
+                <div className="flex justify-center mt-8">
+                  <button
+                    className={buttonClass}
+                    style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                    onClick={() => window.location.href = prevPageUrl}
+                  >
+                    {currentIdx === 0 ? 'Back to Stats' : `Back to previous category${prevCat ? ': ' + prevCat : ''}`}
+                  </button>
+                </div>
+              );
+            } else {
+              // Back button left, next button right
+              return (
+                <div className="flex justify-center items-center mt-8 gap-6">
+                  <button
+                    className={buttonClass}
+                    style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                    onClick={() => window.location.href = prevPageUrl}
+                  >
+                    Back to previous category: {prevCat}
+                  </button>
+                  <button
+                    className={buttonClass}
+                    style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                    onClick={() => window.location.href = nextPageUrl}
+                  >
+                    Go to next top category: {nextCat}
+                  </button>
+                </div>
+              );
+            }
+          })()
+        )}
 
       </div>
       {/* Tailwind Animation Styles */}

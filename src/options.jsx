@@ -88,6 +88,14 @@ export default function OptionsPage() {
   async function calculateTabWrapSummary() {
   categorizeEntries(false); // Ensure all entries are categorized first
   const { db, profile } = await getStorage(['db', 'profile']);
+  // Remove all entries categorized into a category starting with lowercase 'misc'
+  for (const date of Object.keys(db || {})) {
+    for (const [url, entry] of Object.entries(db[date] || {})) {
+      if (entry.category && entry.category.toLowerCase().startsWith('misc')) {
+        delete db[date][url];
+      }
+    }
+  }
     const summary = {
       perDay: {},
       totalSeconds: 0,
@@ -111,7 +119,7 @@ export default function OptionsPage() {
       for (const entry of Object.values(db[date] || {})) {
         daySeconds += entry.time || 0;
         dayTabs += entry.count || 0;
-        if (entry.category) {
+        if (entry.category && entry.category !== 'Misc / Uncategorized' && entry.category !== 'miscellaneous') {
           if (!categoryTotals[entry.category]) categoryTotals[entry.category] = 0;
           categoryTotals[entry.category] += entry.time || 0;
         }
@@ -136,6 +144,7 @@ export default function OptionsPage() {
     summary.categoryTotals = categoryTotals;
     // Calculate percent breakdown
     summary.categoryPercents = Object.entries(categoryTotals)
+      .filter(([cat]) => cat !== 'Misc / Uncategorized' && cat !== 'miscellaneous')
       .map(([cat, sec]) => ({
         cat,
         sec,
@@ -145,15 +154,19 @@ export default function OptionsPage() {
       .sort((a, b) => b.sec - a.sec);
 
     // Get top 100 pages (by time spent) for each top 5 category and save their titles
-    const top5 = summary.categoryPercents.slice(0, 5).map(x => x.cat);
+    const top5 = summary.categoryPercents
+      .filter(x => x.cat !== 'Misc / Uncategorized' && x.cat !== 'miscellaneous')
+      .slice(0, 5)
+      .map(x => x.cat);
     const topPagesByCategory = {};
     for (const cat of top5) {
+      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
       topPagesByCategory[cat] = [];
     }
     // Collect all entries for each top category
     for (const date of Object.keys(db || {})) {
       for (const [url, entry] of Object.entries(db[date] || {})) {
-        if (top5.includes(entry.category)) {
+        if ((top5.includes(entry.category)) && entry.category !== 'Misc / Uncategorized' && entry.category !== 'miscellaneous') {
           topPagesByCategory[entry.category].push({
             title: entry.title || url,
             time: entry.time || 0,
@@ -165,6 +178,7 @@ export default function OptionsPage() {
     // Sort and keep top 100 by time spent
     summary.categorySummaries = {};
     for (const cat of top5) {
+      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
       topPagesByCategory[cat] = topPagesByCategory[cat]
         .sort((a, b) => b.time - a.time)
         .slice(0, 100);
@@ -203,6 +217,7 @@ export default function OptionsPage() {
     // Generalize streak logic for top 5 categories
     summary.topCategoryStreaks = {};
     for (const cat of top5) {
+      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
       let streakArr = [];
       // Build a map of date -> minutes for this category
       const dateMinutes = {};

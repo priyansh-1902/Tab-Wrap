@@ -142,6 +142,28 @@ import './tabwrapstats.css';
               </div>
             ))}
           </div>
+            {/* Button to go to top category page */}
+            {sortedCategories.length > 0 && (
+              (() => {
+                const topCat = sortedCategories[0].cat;
+                let pageName = '';
+                if (topCat.includes('/')) {
+                  pageName = topCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
+                } else {
+                  pageName = topCat.split(' ')[0].toLowerCase();
+                }
+                const pageUrl = `${pageName}.html`;
+                return (
+                  <button
+                    className="stats-social-btn"
+                    style={{ background: colorScheme.gradient, boxShadow: '0 2px 8px rgba(162,89,255,0.12)', marginTop: '18px' }}
+                    onClick={() => window.location.href = pageUrl}
+                  >
+                    Go to your top category page
+                  </button>
+                );
+              })()
+            )}
           {/* Conditional Social Media Button */}
           {sortedCategories.slice(0, 5).some(cat => cat.cat === 'Social Media / Messaging' || cat.cat === 'Social Media') && (
             <button
