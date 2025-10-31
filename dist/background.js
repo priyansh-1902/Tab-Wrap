@@ -2,6 +2,7 @@ let activeTabId = null;
 let activeTabUrl = null;
 let activeTabTitle = null;
 let lastActivated = null;
+let lastUpdatedEntries = [];
 
 // Returns today's date in YYYY-MM-DD format, or debug date if set
 async function getToday() {
@@ -38,6 +39,53 @@ async function updateTime(url, title, delta) {
     lastUpdated: Date.now()
   });
   await chrome.storage.local.set({ db });
+  trackUpdatedUrl(url, today);
+}
+
+function trackUpdatedUrl(url, date) {
+  console.log('[trackUpdatedUrl] Called with:', url, date);
+  // Remove if already present
+  lastUpdatedEntries = lastUpdatedEntries.filter(e => !(e.url === url && e.date === date));
+  console.log('[trackUpdatedUrl] After filter:', lastUpdatedEntries);
+  // Add to front
+  lastUpdatedEntries.unshift({ url, date });
+  console.log('[trackUpdatedUrl] After unshift:', lastUpdatedEntries);
+  // Keep only last 3
+  if (lastUpdatedEntries.length > 3) lastUpdatedEntries = lastUpdatedEntries.slice(0, 3);
+  console.log('[trackUpdatedUrl] After slice:', lastUpdatedEntries);
+  // If exactly 3 unique, trigger categorize
+  if (lastUpdatedEntries.length === 3) {
+    console.log('[trackUpdatedUrl] Triggering categorize with:', lastUpdatedEntries);
+    createOffscreenAndCategorize(lastUpdatedEntries.slice());
+    lastUpdatedEntries = [];
+    console.log('[trackUpdatedUrl] Reset lastUpdatedEntries');
+  }
+}
+
+async function createOffscreenAndCategorize(entries) {
+  console.log('[createOffscreenAndCategorize] Called with:', entries);
+  // Create offscreen document if not already present
+  if (!await chrome.offscreen.hasDocument()) {
+    console.log('[createOffscreenAndCategorize] Creating offscreen document');
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: ['DOM_PARSER'],
+      justification: 'Categorize URLs in background'
+    });
+  } else {
+    console.log('[createOffscreenAndCategorize] Offscreen document already exists');
+  }
+  // Get db and profile
+  const { db, profile } = await chrome.storage.local.get(['db', 'profile']);
+  // Build full entry objects for each tracked entry
+  const fullEntries = entries.map(({ url, date }) => {
+    const entry = (db[date] && db[date][url]) ? { ...db[date][url], url, date } : { url, date, title: url };
+    return entry;
+  });
+  // Send message to offscreen doc to run categorizeEntries
+  console.log('[createOffscreenAndCategorize] Sending message to offscreen doc with full entries and profile');
+  console.log('profile:', profile);
+  chrome.runtime.sendMessage({ type: 'CATEGORIZE_ENTRIES', entries: fullEntries, profil: profile });
 }
 
 // Request title from content script
@@ -146,6 +194,22 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     lastActivated = Date.now();
     sendResponse({ status: 'ok' });
   }
+  if (message.type === 'CATEGORIZED_ENTRIES' && Array.isArray(message.entries)) {
+    console.log('[background] Received CATEGORIZED_ENTRIES:', message.entries);
+    const storage = await chrome.storage.local.get(['db']);
+    const db = storage.db || {};
+    for (const entry of message.entries) {
+      const { url, date, category } = entry;
+      if (!db[date]) db[date] = {};
+      if (!db[date][url]) db[date][url] = {};
+      db[date][url].category = category;
+    }
+    await chrome.storage.local.set({ db });
+    console.log('[background] Updated db with categorized entries');
+    // Handshake: tell offscreen doc to close
+    chrome.runtime.sendMessage({ type: 'CLOSE_OFFSCREEN' });
+    console.log('[background] Sent CLOSE_OFFSCREEN to offscreen doc');
+  }
 });
 
 // Increment count and update lastUpdated when a tab is loaded or reloaded
@@ -164,9 +228,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
     db[today][tab.url].count = (db[today][tab.url].count || 0) + 1;
     await chrome.storage.local.set({ db });
+    trackUpdatedUrl(tab.url, today);
     console.log(`[onUpdated] Incremented count for URL: ${tab.url} | Count: ${db[today][tab.url].count}`);
-
-    // If the tab is active, set tracking variables so time is counted from first load
     if (tab.active) {
       activeTabId = tabId;
       activeTabUrl = tab.url;
