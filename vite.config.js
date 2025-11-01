@@ -7,20 +7,20 @@ export default defineConfig({
     outDir: './dist',
     rollupOptions: {
       input: {
-        options: './options.html',
-        tabwrap: './tabwrap.html',
-        tabwrapstats: './tabwrapstats.html',
-        work: './work.html',
-        finance: './finance.html',
-        hobbies: './hobbies.html',
-        social: './social.html',
-        shopping: './shopping.html',
-        entertainment: './entertainment.html',
-        spirituality: './spirituality.html',
-        health: './health.html',
-        community: './community.html',
-        news: './news.html',
-        travel: './travel.html'
+        options: './pages/options.html',
+        tabwrap: './pages/tabwrap.html',
+        tabwrapstats: './pages/tabwrapstats.html',
+        work: './pages/work.html',
+        finance: '/pages/finance.html',
+        hobbies: '/pages/hobbies.html',
+        social: '/pages/social.html',
+        shopping: '/pages/shopping.html',
+        entertainment: '/pages/entertainment.html',
+        spirituality: '/pages/spirituality.html',
+        health: '/pages/health.html',
+        community: '/pages/community.html',
+        news: '/pages/news.html',
+        travel: '/pages/travel.html'
       }
     }
   }

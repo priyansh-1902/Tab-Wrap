@@ -18,12 +18,9 @@ function TabWrapPage() {
 
       {/* Main Content */}
       <div className="relative z-10 text-center space-y-6 max-w-xl mx-auto">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-300 uppercase tracking-widest">
+  <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-300 uppercase tracking-widest" style={{ letterSpacing: '0.15em' }}>
           TAB WRAP
         </h1>
-        <p className="text-6xl sm:text-8xl font-extrabold text-white drop-shadow-lg">
-          2024
-        </p>
         <p className="text-base sm:text-lg text-gray-300 px-4">
           Your personalized deep dive into an incredible month of browsing.
         </p>

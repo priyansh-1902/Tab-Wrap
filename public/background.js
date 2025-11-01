@@ -21,6 +21,7 @@ function updateDbForDate(db, date, url, entryUpdate) {
   if (!db[date]) db[date] = {};
   if (!db[date][url]) db[date][url] = { time: 0, title: url, category: '', count: 0 };
   Object.assign(db[date][url], entryUpdate);
+  console.log(`[updateDbForDate] Updated db for date: ${date}, url: ${url} with`, entryUpdate);
   return db;
 }
 
@@ -33,6 +34,7 @@ async function updateTime(url, title, delta) {
   const historyPaused = storage.historyPaused;
   if (historyPaused) return;
   const today = await getToday();
+  console.log(`[updateTime] Updating time for URL: ${url} | Delta: ${delta}s on ${today}`);
   updateDbForDate(db, today, url, {
     time: (db[today]?.[url]?.time || 0) + delta,
     title: title || url,
@@ -106,7 +108,7 @@ function requestTabInfo(tabId) {
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   const now = Date.now();
   if (activeTabUrl && lastActivated) {
-    await updateTime(activeTabUrl, activeTabTitle, Math.floor((now - lastActivated) / 1000));
+      await updateTime(activeTabUrl, activeTabTitle, (now - lastActivated) / 1000);
   }
   // Add new tab's url to db and set lastUpdated
   activeTabId = activeInfo.tabId;
@@ -131,7 +133,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
   const now = Date.now();
   if (activeTabUrl && lastActivated) {
-    await updateTime(activeTabUrl, activeTabTitle, Math.floor((now - lastActivated) / 1000));
+      await updateTime(activeTabUrl, activeTabTitle, (now - lastActivated) / 1000);
   }
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
     activeTabId = null;
@@ -193,20 +195,20 @@ chrome.runtime.onInstalled.addListener(() => {
     }
   });
   // Open options page on install
-  chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('pages/options.html') });
 });
 chrome.runtime.onStartup.addListener(() => injectAllTabs());
 
 // Open the Tab Wrap page as a full tab (not popup) when the toolbar action is clicked
 chrome.action && chrome.action.onClicked && chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('pages/options.html') });
 });
 
 // On extension suspend (service worker unload)
 self.addEventListener('onSuspend', async () => {
   const now = Date.now();
   if (activeTabUrl && lastActivated) {
-    await updateTime(activeTabUrl, activeTabTitle, Math.floor((now - lastActivated) / 1000));
+    await updateTime(activeTabUrl, activeTabTitle, (now - lastActivated) / 1000);
   }
 });
 
@@ -246,6 +248,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     const today = await getToday();
     if (!db[today]) db[today] = {};
     if (!db[today][tab.url]) {
+      console.log(`[onUpdated] New URL loaded: ${tab.url}`);
       db[today][tab.url] = { time: 0, title: tab.title || tab.url, count: 0, lastUpdated: Date.now() };
     } else {
       db[today][tab.url].lastUpdated = Date.now();

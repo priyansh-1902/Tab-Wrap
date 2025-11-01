@@ -253,7 +253,7 @@ function TabWrapStats() {
     });
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 flex flex-col items-center font-sans" style={{ backgroundColor: '#0a0a0a' }}>
+  <div className="min-h-screen p-4 sm:p-8 flex flex-col items-center font-sans" style={{ backgroundColor: '#000' }}>
       {/* ...existing code... */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div className="absolute top-10 left-1/4 w-96 h-96 bg-[#ff0099] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
@@ -265,7 +265,7 @@ function TabWrapStats() {
       <div className="w-full max-w-xl p-6 md:p-8 rounded-3xl backdrop-filter backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl relative space-y-8 mt-10 mb-10">
         {/* Header Section */}
         <div className="text-center mb-6">
-          <p className="text-xs text-gray-400 uppercase tracking-widest">TAB WRAP - OCTOBER</p>
+          <p className="text-xs text-gray-400 uppercase tracking-widest">TAB WRAP</p>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white mt-2 drop-shadow-lg">
             Your Browsing Stats
           </h1>
@@ -307,26 +307,28 @@ function TabWrapStats() {
         </div>
 
         {/* Action Buttons */}
-        {/* Button to go to top category page */}
+        {/* Centered Button to go to top category page */}
         {activityBreakdown.length > 0 && (
-          (() => {
-            const topCat = activityBreakdown[0].name;
-            let pageName = '';
-            if (topCat.includes('/')) {
-              pageName = topCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
-            } else {
-              pageName = topCat.split(' ')[0].toLowerCase();
-            }
-            const pageUrl = `${pageName}.html`;
-            return (
-              <button
-                className="mt-6 py-3 px-6 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out shadow-lg bg-[#ff0099] hover:bg-[#e00080] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
-                onClick={() => window.location.href = pageUrl}
-              >
-                Go to your top category page
-              </button>
-            );
-          })()
+          <div className="flex justify-center w-full">
+            {(() => {
+              const topCat = activityBreakdown[0].name;
+              let pageName = '';
+              if (topCat.includes('/')) {
+                pageName = topCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
+              } else {
+                pageName = topCat.split(' ')[0].toLowerCase();
+              }
+              const pageUrl = `${pageName}.html`;
+              return (
+                <button
+                  className="mt-6 py-3 px-6 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out shadow-lg bg-[#ff0099] hover:bg-[#e00080] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+                  onClick={() => window.location.href = pageUrl}
+                >
+                  Go to your top category page
+                </button>
+              );
+            })()}
+          </div>
         )}
       </div>
 

@@ -289,7 +289,7 @@ export default function CategoryPage({
   console.log({ quippySummary, isStreaming, shownValue, unit, streakDays, streakDates, timePeriodLabel, progress });
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 flex items-center justify-center bg-gray-900 font-sans">
+  <div className="min-h-screen p-4 sm:p-8 flex items-center justify-center font-sans" style={{ backgroundColor: '#000' }}>
       {/* Background Effect: Cosmic Blur */}
       {/* Removed bgColors overlays as requested */}
 

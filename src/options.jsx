@@ -172,19 +172,20 @@ export default function OptionsPage() {
         totalSeconds += entry.time || 0;
       }
     }
-    if (totalSeconds < 60) {
+    if (totalSeconds < 120) {
       setTabWrapLoading(false);
       setTabWrapReady(false);
       setTabWrapError('You have spent less than 5 minutes browsing. Maybe spend some time browsing and try again later.');
       return;
     }
-    await categorizeEntries(true); // Ensure all entries are categorized first
+    await categorizeEntries(false); // Ensure all entries are categorized first
     const { profile } = await getStorage(['db', 'profile']);
-    // Remove all entries categorized as 'miscellaneous' (do not mutate original db)
+    // Remove all entries whose category is not in defaultCategories (case-insensitive, do not mutate original db)
+    const allowedCategories = defaultCategories.map(cat => (typeof cat === 'string' ? cat : cat.text.toLowerCase()));
     const filteredDb = {};
     for (const date of Object.keys(db || {})) {
       for (const [url, entry] of Object.entries(db[date] || {})) {
-        if (entry.category && entry.category.toLowerCase() !== 'miscellaneous') {
+        if (entry.category && allowedCategories.includes(entry.category.toLowerCase())) {
           if (!filteredDb[date]) filteredDb[date] = {};
           filteredDb[date][url] = { ...entry };
         }
@@ -246,8 +247,8 @@ export default function OptionsPage() {
       }))
       .sort((a, b) => b.sec - a.sec);
 
-    // Get top 100 pages (by time spent) for each top 5 category and save their titles
-    const top5 = summary.categoryPercents.slice(0, 5).map(x => x.cat);
+  // Get top 100 pages (by time spent) for each top 5 category and save their titles
+  const top5 = summary.categoryPercents.filter(x => x.sec > 0).slice(0, 5).map(x => x.cat);
     const topPagesByCategory = {};
     for (const cat of top5) {
       topPagesByCategory[cat] = [];
@@ -374,9 +375,9 @@ export default function OptionsPage() {
           console.log('Checking entry for URL:', url, 'Current category:', entry.category);
           let prompt = '';
           if (description.trim() !== '') {
-            prompt = `User description: ${description}\nCategories: ${categories.join(', ')}\nURL: ${url}\nTitle: ${entry.title}\n\nBased on the above, which category was the user spending time on?\nStrictly output only one category from the list above`
+            prompt = `User description: ${description}\nCategories: ${categories.join(', ')}\nURL: ${url}\nTitle: ${entry.title}\n\nBased on the above, which category was the user spending time on?\nStrictly output **only** one category from the list above. Do not make up a new category that is not in the list provided.`;
           } else {
-            prompt = `\nURL: ${url}\nTitle: ${entry.title}\n\nIf the user was on the above webpage, which category out of ${categories.join(', ')} were they likely spending time on?\nStrictly output only one category from the list provided`;
+            prompt = `\nURL: ${url}\nTitle: ${entry.title}\n\nIf the user was on the above webpage, which category out of ${categories.join(', ')} were they likely spending time on?\n Strictly output **only** one category from the list above. Do not make up a new category that is not in the list provided.`;
           }
           console.log("Asking model with prompt:", prompt);
           try {
@@ -512,7 +513,7 @@ export default function OptionsPage() {
             <div style={{ color: '#ff0099', fontWeight: 600, marginTop: 12, textAlign: 'center', maxWidth: 320 }}>{tabWrapError}</div>
           )}
           {tabWrapReady && !tabWrapLoading && (
-            <button style={{ background: 'linear-gradient(90deg, #ff0099 0%, #232526 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 32px', fontWeight: 700, fontSize: 18, boxShadow: '0 2px 8px rgba(255,45,85,0.18)', cursor: 'pointer', marginTop: 16 }} onClick={() => window.location.href = 'tabwrap.html'}>
+            <button style={{ background: 'linear-gradient(90deg, #ff0099 0%, #232526 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 32px', fontWeight: 700, fontSize: 18, boxShadow: '0 2px 8px rgba(255,45,85,0.18)', cursor: 'pointer', marginTop: 16 }} onClick={() => window.location.href = '../pages/tabwrap.html'}>
               Take me to my Tab Wrap
             </button>
           )}

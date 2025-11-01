@@ -54,7 +54,7 @@ chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
     for (const entry of entries) {
       const { url, date, title } = entry;
       console.log('[offscreen] Processing entry:', entry);
-      const prompt = `User description: ${description}\nCategories: ${categories.join(', ')}\nURL: ${url}\nTitle: ${title}\n\nBased on the above, which category was the user spending time on?\nStrictly output only one category from the list above. If none match, output 'miscellaneous'.`;
+      const prompt = `User description: ${description}\nCategories: ${categories.join(', ')}\nURL: ${url}\nTitle: ${title}\n\nBased on the above, which category was the user spending time on?\nStrictly output **only** one category from the list above. Do not make up a new category that is not in the list provided.`;
       console.log('[offscreen] Prompt:', prompt);
       try {
         const result = await session.prompt(prompt);

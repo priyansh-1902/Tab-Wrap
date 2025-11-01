@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Page Time Logger",
+  "name": "Tap Wrap",
   "version": "1.0",
   "description": "Logs time spent on each URL (active tabs only)",
   "permissions": ["tabs", "storage", "scripting", "offscreen"],
@@ -14,7 +14,7 @@
       "run_at": "document_idle"
     }
   ],
-  "options_page": "options.html",
+  "options_page": "pages/options.html",
   "action": {
     "default_title": "Tab Wrap"
   },
