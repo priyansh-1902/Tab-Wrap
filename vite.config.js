@@ -10,17 +10,7 @@ export default defineConfig({
         options: './pages/options.html',
         tabwrap: './pages/tabwrap.html',
         tabwrapstats: './pages/tabwrapstats.html',
-        work: './pages/work.html',
-        finance: '/pages/finance.html',
-        hobbies: '/pages/hobbies.html',
-        social: '/pages/social.html',
-        shopping: '/pages/shopping.html',
-        entertainment: '/pages/entertainment.html',
-        spirituality: '/pages/spirituality.html',
-        health: '/pages/health.html',
-        community: '/pages/community.html',
-        news: '/pages/news.html',
-        travel: '/pages/travel.html'
+        category: './pages/category.html'
       }
     }
   }

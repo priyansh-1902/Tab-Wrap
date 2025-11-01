@@ -175,7 +175,7 @@ function injectAllTabs() {
 chrome.runtime.onInstalled.addListener(() => {
   injectAllTabs();
   // Save default profile if not present
-  const defaultCategories = [
+  const getDefaultCategories = () => [
     { text: "Work", emoji: "💼", color: "#7e22ce" },
     { text: "Finance", emoji: "💰", color: "#22c55e" },
     { text: "Hobbies", emoji: "🎨", color: "#facc15" },
@@ -187,11 +187,21 @@ chrome.runtime.onInstalled.addListener(() => {
     { text: "Shopping", emoji: "🛒", color: "#38bdf8" },
     { text: "News", emoji: "📰", color: "#2563eb" },
     { text: "Travel", emoji: "✈️", color: "#f472b6" },
-    { text: "Miscellaneous", emoji: "❓", color: "#d1d5db" }
+    { text: "Miscellaneous", emoji: "❓", color: "#9ca3af" }
   ];
   chrome.storage.local.get(['profile'], (data) => {
     if (!data.profile) {
-      chrome.storage.local.set({ profile: { description: '', categories: defaultCategories } });
+      chrome.storage.local.set({ profile: { description: '', categories: getDefaultCategories() } });
+    } else {
+      // Ensure Miscellaneous exists
+      const profile = data.profile;
+      const hasMisc = profile.categories.some(cat => 
+        (typeof cat === 'string' ? cat : cat.text).toLowerCase() === 'miscellaneous'
+      );
+      if (!hasMisc) {
+        profile.categories.push({ text: "Miscellaneous", emoji: "❓", color: "#9ca3af" });
+        chrome.storage.local.set({ profile });
+      }
     }
   });
   // Open options page on install

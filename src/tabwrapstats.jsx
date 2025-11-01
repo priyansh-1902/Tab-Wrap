@@ -187,101 +187,126 @@ const CategoryProgressBar = ({ name, percentage, icon, color }) => {
  */
 function TabWrapStats() {
   const [summary, setSummary] = useState(null);
+  const [categoryColorMap, setCategoryColorMap] = useState({});
+  
   useEffect(() => {
-    chrome.storage.local.get(['tabWrapSummary'], (data) => {
+    chrome.storage.local.get(['tabWrapSummary', 'profile'], (data) => {
       setSummary(data.tabWrapSummary || null);
+      
+      // Build color map from profile categories
+      const profile = data.profile || {};
+      const categories = profile.categories || [];
+      const colorMap = {};
+      categories.forEach(cat => {
+        const name = typeof cat === 'string' ? cat : cat.text;
+        const color = typeof cat === 'string' ? '#38bdf8' : cat.color;
+        colorMap[name] = color;
+      });
+      setCategoryColorMap(colorMap);
     });
   }, []);
 
   if (!summary) {
-    return <div className="min-h-screen flex items-center justify-center text-white bg-black">Loading stats...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white bg-[#0a0a0a]">
+        <div className="text-center space-y-4">
+          <div className="loader" style={{ width: 48, height: 48, border: '4px solid rgba(255, 0, 153, 0.2)', borderTop: '4px solid #ff0099', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
+          <p className="text-gray-400">Loading your awesome stats...</p>
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+        </div>
+      </div>
+    );
   }
 
   // Prepare top 5 categories for breakdown
-  // Import defaultCategories from options.jsx
-  const defaultCategories = [
-    { text: "Work", color: "#7e22ce" },
-    { text: "Finance", color: "#22c55e" },
-    { text: "Hobbies", color: "#facc15" },
-    { text: "Spirituality", color: "#22d3ee" },
-    { text: "Health", color: "#ef4444" },
-    { text: "Social Media", color: "#ff6347" },
-    { text: "Community", color: "#a259ff" },
-    { text: "Entertainment", color: "#eab308" },
-    { text: "Shopping", color: "#38bdf8" },
-    { text: "News", color: "#64748b" },
-    { text: "Travel", color: "#f472b6" },
-    { text: "Misc", color: "#f472b6" }
-  ];
-
   const categoryIcons = {
     Work: Briefcase,
     Finance: DollarSign,
     Hobbies: Palette,
     Spirituality: Sun,
     Health: HeartPulse,
+    'Social Media': MessageSquare,
     Social: MessageSquare,
     Community: Handshake,
     Entertainment: Clapperboard,
     Shopping: ShoppingCart,
     News: Newspaper,
     Travel: Plane,
-    default: HelpCircle,
+    Miscellaneous: HelpCircle,
+    default: Zap,
   };
 
   function getCategoryColor(name) {
-    // Try exact match first
-    const found = defaultCategories.find(cat => cat.text === name);
-    if (found) return found.color;
-    // Try partial match for cases like "Work and Learning"
-    for (const cat of defaultCategories) {
-      if (name.toLowerCase().includes(cat.text.toLowerCase())) return cat.color;
-    }
-    return '#38bdf8'; // fallback
+    // Use dynamic color from profile
+    return categoryColorMap[name] || '#38bdf8';
+  }
+  
+  function getCategoryIcon(name) {
+    // Try exact match
+    if (categoryIcons[name]) return categoryIcons[name];
+    // Try first word
+    const firstWord = name.split(' ')[0];
+    return categoryIcons[firstWord] || categoryIcons.default;
   }
 
   const top5 = (summary.categoryPercents || []).slice(0, 5);
-    const activityBreakdown = top5.map(cat => {
-      const key = cat.cat.split(' ')[0];
-      const IconComponent = categoryIcons[key] || Zap;
-      return {
-        name: cat.cat,
-        percentage: cat.pct,
-        IconComponent,
-        color: getCategoryColor(cat.cat)
-      };
-    });
+  const activityBreakdown = top5.map(cat => {
+    const IconComponent = getCategoryIcon(cat.cat);
+    return {
+      name: cat.cat,
+      percentage: cat.pct,
+      IconComponent,
+      color: getCategoryColor(cat.cat)
+    };
+  });
 
   return (
-  <div className="min-h-screen p-4 sm:p-8 flex flex-col items-center font-sans" style={{ backgroundColor: '#000' }}>
-      {/* ...existing code... */}
+  <div className="min-h-screen p-4 sm:p-8 flex flex-col items-center font-sans" style={{ backgroundColor: '#0a0a0a' }}>
+      {/* Modern gradient mesh background */}
       <div className="absolute inset-0 overflow-hidden -z-10">
-        <div className="absolute top-10 left-1/4 w-96 h-96 bg-[#ff0099] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-        <div className="absolute top-1/2 right-0 w-80 h-80 bg-[#ff6347] rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-10 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute top-1/2 right-0 w-80 h-80 bg-gradient-to-br from-blue-500/20 via-purple-500/30 to-transparent rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-transparent rounded-full blur-3xl animate-blob animation-delay-4000"></div>
+        {/* Grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       </div>
 
       {/* Main Content Card */}
-      <div className="w-full max-w-xl p-6 md:p-8 rounded-3xl backdrop-filter backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl relative space-y-8 mt-10 mb-10">
-        {/* Header Section */}
-        <div className="text-center mb-6">
-          <p className="text-xs text-gray-400 uppercase tracking-widest">TAB WRAP</p>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mt-2 drop-shadow-lg">
-            Your Browsing Stats
-          </h1>
-        </div>
+      <div className="w-full max-w-2xl relative z-10">
+        <div className="bg-gradient-to-br from-gray-900/90 via-gray-900/95 to-black/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+          {/* Header Section */}
+          <div className="relative p-8 pb-6 border-b border-white/5">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10"></div>
+            <div className="relative text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50 mb-2">
+                <Sparkles className="w-8 h-8 text-white animate-pulse" />
+              </div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">TAB WRAP</p>
+              <h1 className="text-4xl sm:text-5xl font-black drop-shadow-lg" style={{ 
+                background: 'linear-gradient(135deg, #ffffff 0%, #a855f7 50%, #ff0099 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                Your Browsing Stats
+              </h1>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-8 space-y-8">
 
         {/* Total Browsing Stats */}
         <TotalTimeDisplay
           minutes={summary.totalMinutes}
-          label="Total Minutes Spent Browsing"
+          label="Total Minutes Browsing"
           focusColor="#ff0099"
         />
 
         {/* New Tabs and Highlight */}
         <NewTabsHighlight
           count={summary.totalTabs}
-          message={`You opened a mere **${summary.totalTabs}** new tabs this month!`}
+          message={`You opened **${summary.totalTabs}** tabs! ${summary.totalTabs > 100 ? "Tab hoarder alert! 🚨" : summary.totalTabs > 50 ? "That's... a lot of tabs 😅" : "Not bad! 👍"}`}
           highlight={''}
         />
 
@@ -309,32 +334,32 @@ function TabWrapStats() {
         {/* Action Buttons */}
         {/* Centered Button to go to top category page */}
         {activityBreakdown.length > 0 && (
-          <div className="flex justify-center w-full">
+          <div className="flex justify-center w-full pt-4">
             {(() => {
               const topCat = activityBreakdown[0].name;
-              let pageName = '';
-              if (topCat.includes('/')) {
-                pageName = topCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
-              } else {
-                pageName = topCat.split(' ')[0].toLowerCase();
-              }
-              const pageUrl = `${pageName}.html`;
+              const topColor = activityBreakdown[0].color;
+              const pageUrl = `category.html?name=${encodeURIComponent(topCat)}&color=${encodeURIComponent(topColor)}`;
               return (
                 <button
-                  className="mt-6 py-3 px-6 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out shadow-lg bg-[#ff0099] hover:bg-[#e00080] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+                  className="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 ease-in-out shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+                  style={{
+                    background: 'linear-gradient(135deg, #ff0099 0%, #a855f7 100%)',
+                    color: 'white'
+                  }}
                   onClick={() => window.location.href = pageUrl}
                 >
-                  Go to your top category page
+                  Explore Top Category →
                 </button>
               );
             })()}
           </div>
         )}
+          </div>
+        </div>
       </div>
 
-      {/* Tailwind Animation Styles (unchanged) */}
+      {/* Tailwind Animation Styles */}
       <style>{`
-        /* Define custom keyframes for the "cosmic blob" animation */
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);
@@ -358,8 +383,6 @@ function TabWrapStats() {
         .animation-delay-4000 {
           animation-delay: 4s;
         }
-
-        /* Standard CSS for pulse effect */
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
@@ -370,7 +393,7 @@ function TabWrapStats() {
       `}</style>
     </div>
   );
-};
+}
 
 // Entry point for Vite
 import { createRoot } from 'react-dom/client';

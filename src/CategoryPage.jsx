@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { Trophy, Clock, Briefcase, DollarSign, Palette, Sun, HeartPulse, MessageSquare, Handshake, Clapperboard, ShoppingCart, Newspaper, Plane, HelpCircle } from 'lucide-react';
+import { Trophy, Clock, Briefcase, DollarSign, Palette, Sun, HeartPulse, MessageSquare, Handshake, Clapperboard, ShoppingCart, Newspaper, Plane, HelpCircle, Hash } from 'lucide-react';
 
 /**
  * General hook for category summary, streak, and quippy summary.
@@ -158,20 +158,20 @@ function useCategorySummary({
  */
 function TotalHoursDisplay({ hours, unit, label, focusColor, iconColor = '#4ade80' }) {
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-2xl border border-white/10 shadow-xl w-full max-w-lg mx-auto">
-      <div className={`text-white mb-4 p-2 rounded-full`} style={{ backgroundColor: iconColor + '33' }}>
-        <Clock className="w-8 h-8" style={{ color: iconColor }} />
+    <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-gray-800/40 to-gray-900/40 rounded-2xl border border-gray-700/50 shadow-xl w-full max-w-lg mx-auto">
+      <div className={`text-white mb-4 p-3 rounded-full`} style={{ backgroundColor: iconColor + '22' }}>
+        <Clock className="w-10 h-10" style={{ color: iconColor }} />
       </div>
       <p 
-        className="text-6xl sm:text-7xl font-extrabold" 
+        className="text-7xl sm:text-8xl font-extrabold" 
         style={{ color: focusColor }}
       >
         {hours}
       </p>
-      <p className="text-sm sm:text-base font-semibold text-gray-400 uppercase tracking-widest mt-2">
+      <p className="text-sm sm:text-base font-semibold text-gray-400 uppercase tracking-widest mt-3">
         {unit}
       </p>
-      <p className="text-2xl sm:text-3xl font-extrabold text-white mt-4 text-center">
+      <p className="text-2xl sm:text-3xl font-bold text-white mt-4 text-center">
         {label}
       </p>
     </div>
@@ -225,29 +225,54 @@ export default function CategoryPage({
   pageTitle = 'CATEGORY SUMMARY'
 }) {
 
-    console.log('color:', focusColor);
-  // Icon mapping for categories
-  const categoryIcons = {
-    Work: Briefcase,
-    Finance: DollarSign,
-    Hobbies: Palette,
-    Spirituality: Sun,
-    Health: HeartPulse,
-    Social: MessageSquare,
-    Community: Handshake,
-    Entertainment: Clapperboard,
-    Shopping: ShoppingCart,
-    News: Newspaper,
-    Travel: Plane,
-    default: HelpCircle,
+  console.log('color:', focusColor);
+  
+  // Dynamic icon mapping
+  const getCategoryIcon = (categoryName) => {
+    const iconMap = {
+      Work: Briefcase,
+      Finance: DollarSign,
+      Hobbies: Palette,
+      Spirituality: Sun,
+      Health: HeartPulse,
+      Social: MessageSquare,
+      'Social Media': MessageSquare,
+      Community: Handshake,
+      Entertainment: Clapperboard,
+      Shopping: ShoppingCart,
+      News: Newspaper,
+      Travel: Plane,
+      Miscellaneous: Hash,
+      default: HelpCircle,
+    };
+    
+    // Try exact match
+    if (iconMap[categoryName]) return iconMap[categoryName];
+    // Try first word
+    const firstWord = categoryName.split(' ')[0];
+    return iconMap[firstWord] || iconMap.default;
   };
+  
   // Top 5 categories state
   const [topCategories, setTopCategories] = useState([]);
+  const [categoryColors, setCategoryColors] = useState({});
+  
   useEffect(() => {
-    chrome.storage.local.get(['tabWrapSummary'], (data) => {
+    chrome.storage.local.get(['tabWrapSummary', 'profile'], (data) => {
       const summary = data.tabWrapSummary || {};
       const sorted = Array.isArray(summary.categoryPercents) ? summary.categoryPercents.slice(0, 5) : [];
       setTopCategories(sorted.map(cat => cat.cat));
+      
+      // Get colors from profile
+      const profile = data.profile || {};
+      const categories = profile.categories || [];
+      const colorMap = {};
+      categories.forEach(cat => {
+        const name = typeof cat === 'string' ? cat : cat.text;
+        const color = typeof cat === 'string' ? focusColor : cat.color;
+        colorMap[name] = color;
+      });
+      setCategoryColors(colorMap);
     });
   }, [categoryNames]);
 
@@ -256,13 +281,15 @@ export default function CategoryPage({
   const currentIdx = topCategories.findIndex(cat => cat === currentCat);
   const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % topCategories.length : 0;
   const nextCat = topCategories[nextIdx] || '';
-  let nextPageName = '';
-  if (nextCat.includes('/')) {
-    nextPageName = nextCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
-  } else {
-    nextPageName = nextCat.split(' ')[0].toLowerCase();
-  }
-  const nextPageUrl = `${nextPageName}.html`;
+  
+  // Dynamic page URL generation
+  const getCategoryPageUrl = (categoryName) => {
+    if (!categoryName) return 'tabwrapstats.html';
+    const color = categoryColors[categoryName] || focusColor;
+    return `category.html?name=${encodeURIComponent(categoryName)}&color=${encodeURIComponent(color)}`;
+  };
+  
+  const nextPageUrl = getCategoryPageUrl(nextCat);
   const {
     quippySummary,
     isStreaming,
@@ -289,23 +316,30 @@ export default function CategoryPage({
   console.log({ quippySummary, isStreaming, shownValue, unit, streakDays, streakDates, timePeriodLabel, progress });
 
   return (
-  <div className="min-h-screen p-4 sm:p-8 flex items-center justify-center font-sans" style={{ backgroundColor: '#000' }}>
+  <div className="min-h-screen p-4 sm:p-8 flex items-center justify-center font-sans" style={{ backgroundColor: '#0a0a0a' }}>
       {/* Background Effect: Cosmic Blur */}
-      {/* Removed bgColors overlays as requested */}
+      <div className="absolute inset-0 overflow-hidden -z-10">
+        <div className="absolute top-10 left-1/4 w-96 h-96 rounded-full mix-blend-lighten filter blur-3xl opacity-20 animate-blob" style={{ backgroundColor: focusColor }}></div>
+        <div className="absolute top-1/2 right-0 w-80 h-80 bg-purple-500 rounded-full mix-blend-lighten filter blur-3xl opacity-15 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full mix-blend-lighten filter blur-3xl opacity-10 animate-blob animation-delay-4000" style={{ backgroundColor: focusColor }}></div>
+      </div>
 
       {/* Main Content Card - Simplified Layout */}
-      <div className="w-full max-w-xl p-6 md:p-8 rounded-3xl backdrop-filter backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl relative space-y-12">
+      <div className="w-full max-w-2xl p-8 md:p-10 rounded-3xl backdrop-filter backdrop-blur-xl bg-gradient-to-br from-gray-900/80 via-gray-900/70 to-gray-800/80 border border-gray-700/50 shadow-2xl relative space-y-10">
         {/* Category Icon and Title */}
         <div className="flex flex-col items-center mb-2">
           {(() => {
             console.log('Rendering icon for category:', label, categoryNames);
             const rawName = (categoryNames && categoryNames.length ? categoryNames[0] : label) || 'default';
-            const firstWord = rawName.split('/')[0].split(' ')[0];
-            const key = firstWord ? (firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase()) : 'default';
-            const IconComponent = categoryIcons[key] || categoryIcons.default;
-            return <IconComponent className="w-14 h-14 mb-2" style={{ color: focusColor }} aria-label={label + ' icon'} />;
+            const IconComponent = getCategoryIcon(rawName);
+            return <IconComponent className="w-16 h-16 mb-3" style={{ color: focusColor }} aria-label={label + ' icon'} />;
           })()}
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-white uppercase tracking-widest drop-shadow-lg">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-center uppercase tracking-wider drop-shadow-lg" style={{ 
+            background: `linear-gradient(135deg, ${focusColor} 0%, ${focusColor}99 100%)`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
             {pageTitle}
           </h1>
         </div>
@@ -320,8 +354,8 @@ export default function CategoryPage({
         />
 
         {/* Small Section Textbox with Gemini Nano quippy summary (streaming) */}
-        <div className="flex flex-col items-center justify-center p-6 bg-white/10 rounded-2xl border border-white/10 shadow-lg w-full max-w-lg mx-auto my-4">
-          <p className="text-base sm:text-lg font-semibold text-white text-center">
+        <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-2xl border border-gray-700/50 shadow-lg w-full max-w-lg mx-auto my-4">
+          <p className="text-lg sm:text-xl font-semibold text-white text-center leading-relaxed">
             {isStreaming ? <span>{quippySummary}<span className="animate-pulse">|</span></span> : (quippySummary || quipDefault)}
           </p>
         </div>
@@ -344,49 +378,49 @@ export default function CategoryPage({
         {topCategories.length === 1 ? (
           <div className="flex justify-center mt-8">
             <button
-              className="w-56 h-12 mx-2 rounded-xl font-semibold text-white text-base bg-[#23243a] shadow-md hover:bg-[#2d2e4a] transition-all flex items-center justify-center tracking-wide"
-              style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+              className="group px-8 py-4 rounded-2xl font-bold text-white text-base bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 border-2 border-gray-700 shadow-xl hover:shadow-2xl hover:border-gray-600 transition-all duration-300 flex items-center justify-center space-x-2 transform hover:scale-105"
               onClick={() => window.location.href = 'tabwrapstats.html'}
             >
-              Back to Stats
+              <span className="text-2xl group-hover:animate-pulse">←</span>
+              <span>Back to Stats</span>
             </button>
           </div>
         ) : topCategories.length > 0 && (
           (() => {
             const prevIdx = currentIdx - 1;
             let prevCat = prevIdx >= 0 ? topCategories[prevIdx] : null;
-            let prevPageName = '';
             let prevPageUrl = '';
             if (currentIdx === 0) {
               prevPageUrl = 'tabwrapstats.html';
             } else if (prevCat) {
-              if (prevCat.includes('/')) {
-                prevPageName = prevCat.split('/')[0].replace(/\s+/g, '').toLowerCase();
-              } else {
-                prevPageName = prevCat.split(' ')[0].toLowerCase();
-              }
-              prevPageUrl = `${prevPageName}.html`;
+              prevPageUrl = getCategoryPageUrl(prevCat);
             }
-            // Layout logic
-            const buttonClass = "w-56 h-12 mx-2 rounded-xl font-semibold text-white text-base bg-[#23243a] shadow-md hover:bg-[#2d2e4a] transition-all flex items-center justify-center tracking-wide";
+            
+            // Improved button styling with gradients and hover effects
+            const buttonBaseClass = "group relative px-6 py-4 rounded-2xl font-bold text-white text-sm overflow-hidden transition-all duration-300 flex items-center justify-center space-x-2 transform hover:scale-105";
+            const gradientOverlay = "absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300";
+            
             if (currentIdx === 0 || currentIdx === topCategories.length - 1) {
               if (currentIdx === 0) {
                 // First category: show both back and next buttons
                 return (
-                  <div className="flex justify-center items-center mt-8 gap-6">
+                  <div className="flex flex-wrap justify-center items-center mt-8 gap-4">
                     <button
-                      className={buttonClass}
-                      style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                      className={`${buttonBaseClass} bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-gray-700 shadow-xl hover:shadow-2xl hover:border-gray-600`}
                       onClick={() => window.location.href = prevPageUrl}
                     >
-                      Back to Stats
+                      <span className="text-xl group-hover:animate-pulse">←</span>
+                      <span className="relative z-10">Back to Stats</span>
                     </button>
                     <button
-                      className={buttonClass}
-                      style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                      className={`${buttonBaseClass} bg-gradient-to-r from-purple-600 to-pink-600 border-2 border-purple-500 shadow-xl hover:shadow-2xl hover:border-purple-400`}
+                      style={{
+                        background: `linear-gradient(135deg, ${categoryColors[nextCat] || '#a855f7'} 0%, ${categoryColors[nextCat] || '#ec4899'} 100%)`
+                      }}
                       onClick={() => window.location.href = nextPageUrl}
                     >
-                      Go to next top category: {nextCat}
+                      <span className="relative z-10">Next: {nextCat}</span>
+                      <span className="text-xl group-hover:animate-pulse">→</span>
                     </button>
                   </div>
                 );
@@ -395,11 +429,11 @@ export default function CategoryPage({
                 return (
                   <div className="flex justify-center mt-8">
                     <button
-                      className={buttonClass}
-                      style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                      className={`${buttonBaseClass} bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-gray-700 shadow-xl hover:shadow-2xl hover:border-gray-600`}
                       onClick={() => window.location.href = prevPageUrl}
                     >
-                      Back to previous category{prevCat ? ': ' + prevCat : ''}
+                      <span className="text-xl group-hover:animate-pulse">←</span>
+                      <span className="relative z-10">Back{prevCat ? `: ${prevCat}` : ''}</span>
                     </button>
                   </div>
                 );
@@ -407,20 +441,28 @@ export default function CategoryPage({
             } else {
               // Back button left, next button right
               return (
-                <div className="flex justify-center items-center mt-8 gap-6">
+                <div className="flex flex-wrap justify-center items-center mt-8 gap-4">
                   <button
-                    className={buttonClass}
-                    style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                    className={`${buttonBaseClass} bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-gray-700 shadow-xl hover:shadow-2xl hover:border-gray-600`}
+                    style={prevCat && categoryColors[prevCat] ? {
+                      background: `linear-gradient(135deg, ${categoryColors[prevCat]}33 0%, ${categoryColors[prevCat]}11 100%)`,
+                      borderColor: categoryColors[prevCat] + '66'
+                    } : {}}
                     onClick={() => window.location.href = prevPageUrl}
                   >
-                    Back to previous category: {prevCat}
+                    <span className="text-xl group-hover:animate-pulse">←</span>
+                    <span className="relative z-10">{prevCat}</span>
                   </button>
                   <button
-                    className={buttonClass}
-                    style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+                    className={`${buttonBaseClass} bg-gradient-to-r from-purple-600 to-pink-600 border-2 border-purple-500 shadow-xl hover:shadow-2xl hover:border-purple-400`}
+                    style={nextCat && categoryColors[nextCat] ? {
+                      background: `linear-gradient(135deg, ${categoryColors[nextCat]} 0%, ${categoryColors[nextCat]}cc 100%)`,
+                      borderColor: categoryColors[nextCat]
+                    } : {}}
                     onClick={() => window.location.href = nextPageUrl}
                   >
-                    Go to next top category: {nextCat}
+                    <span className="relative z-10">{nextCat}</span>
+                    <span className="text-xl group-hover:animate-pulse">→</span>
                   </button>
                 </div>
               );

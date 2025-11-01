@@ -18,18 +18,24 @@ function TabWrapPage() {
 
       {/* Main Content */}
       <div className="relative z-10 text-center space-y-6 max-w-xl mx-auto">
-  <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-300 uppercase tracking-widest" style={{ letterSpacing: '0.15em' }}>
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-300 uppercase tracking-widest" style={{ letterSpacing: '0.15em' }}>
           TAB WRAP
         </h1>
         <p className="text-base sm:text-lg text-gray-300 px-4">
-          Your personalized deep dive into an incredible month of browsing.
+          Ready to see what you've <em>really</em> been up to online? 👀
+        </p>
+        <p className="text-sm text-gray-400 px-4 italic">
+          (Don't worry, we won't judge... much 😏)
         </p>
 
         <button
-          className="mt-8 py-3 px-8 rounded-full bg-gradient-to-r from-[#ff0099] to-[#d60080] text-white font-bold text-lg shadow-lg hover:from-[#e00080] hover:to-[#c20070] transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0a0a0a] focus:ring-[#ff0099]"
+          className="group mt-8 py-4 px-10 rounded-2xl bg-gradient-to-r from-[#ff0099] to-[#d60080] text-white font-bold text-lg shadow-2xl hover:shadow-pink-500/50 hover:from-[#e00080] hover:to-[#c20070] transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-pink-500/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
           onClick={() => window.location.href = 'tabwrapstats.html'}
         >
-          Start My Wrap
+          <span className="flex items-center space-x-2">
+            <span>Let's Do This!</span>
+            <span className="text-xl group-hover:animate-bounce">🚀</span>
+          </span>
         </button>
       {/* Tailwind Animation Styles */}
       <style>{`

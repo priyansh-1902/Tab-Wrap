@@ -62,7 +62,7 @@ chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
         updatedEntries.push(entry);
         console.log('[offscreen] Categorized:', url, 'as', result.trim());
       } catch (e) {
-        entry.category = 'error';
+        entry.category = 'Miscellaneous';
         updatedEntries.push(entry);
         console.log('[offscreen] Error categorizing:', url, e);
       }
