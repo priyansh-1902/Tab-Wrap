@@ -341,7 +341,17 @@ export default function CategoryPage({
 
         {/* Button to go to next top category page, only if not last in top 5 */}
         {/* Back and Next buttons for category navigation */}
-        {topCategories.length > 0 && (
+        {topCategories.length === 1 ? (
+          <div className="flex justify-center mt-8">
+            <button
+              className="w-56 h-12 mx-2 rounded-xl font-semibold text-white text-base bg-[#23243a] shadow-md hover:bg-[#2d2e4a] transition-all flex items-center justify-center tracking-wide"
+              style={{ minWidth: '14rem', maxWidth: '14rem', height: '3rem', boxShadow: '0 2px 12px rgba(56,189,248,0.10)', border: '1px solid #2d2e4a' }}
+              onClick={() => window.location.href = 'tabwrapstats.html'}
+            >
+              Back to Stats
+            </button>
+          </div>
+        ) : topCategories.length > 0 && (
           (() => {
             const prevIdx = currentIdx - 1;
             let prevCat = prevIdx >= 0 ? topCategories[prevIdx] : null;

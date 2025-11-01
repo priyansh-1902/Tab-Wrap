@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import CategoryPage from './src/CategoryPage';
 
 export default defineConfig({
   plugins: [react()],
@@ -22,8 +21,6 @@ export default defineConfig({
         community: './community.html',
         news: './news.html',
         travel: './travel.html'
-
-
       }
     }
   }

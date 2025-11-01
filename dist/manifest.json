@@ -15,7 +15,6 @@
     }
   ],
   "options_page": "options.html",
-  "test_page": "test_page.html", 
   "action": {
     "default_title": "Tab Wrap"
   },

@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { ToggleLeft, User, Save, Trash2, Zap, Play, Pause, Database, Settings } from 'lucide-react';
 
 const defaultCategories = [
   { text: "Work", emoji: "💼", color: "#7e22ce" }, // purple
@@ -9,12 +9,75 @@ const defaultCategories = [
   { text: "Health", emoji: "🏋️", color: "#ef4444" }, // red
   { text: "Social Media", emoji: "💬", color: "#ff6347" }, // bright red
   { text: "Community", emoji: "🤝", color: "#a259ff" }, // violet
-  { text: "Entertainment", emoji: "🎬", color: "#eab308" }, // gold
+  { text: "Entertainment", emoji: "🎬", color: "#fb923c" }, // orange
   { text: "Shopping", emoji: "🛒", color: "#38bdf8" }, // blue
-  { text: "News", emoji: "📰", color: "#64748b" }, // slate
+  { text: "News", emoji: "📰", color: "#2563eb" }, // blue
   { text: "Travel", emoji: "✈️", color: "#f472b6" }, // pink
-  { text: "Misc", emoji: "❓", color: "#d1d5db" } // gray
+  { text: "Miscellaneous", emoji: "❓", color: "#d1d5db" } // gray
 ];
+
+const NotificationToast = () => (
+  <div 
+    id="notification-message"
+    className="fixed top-5 right-5 z-50 p-4 bg-purple-600/90 text-white rounded-lg shadow-xl transition-opacity duration-500 opacity-0 pointer-events-none"
+    style={{ minWidth: '200px', backdropFilter: 'blur(5px)' }}
+  >
+    Action Complete!
+  </div>
+);
+
+
+const CustomCheckbox = ({ checked, onChange, label }) => (
+  <label className="flex items-center space-x-3 cursor-pointer select-none">
+    <div className={`relative w-12 h-6 flex items-center rounded-full transition-all duration-300 ${checked ? 'bg-[#ff0099]' : 'bg-gray-700'}`}>
+      <div className={`w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 transform ${checked ? 'translate-x-7' : 'translate-x-1'}`}></div>
+    </div>
+    <span className="text-gray-300 font-medium">{label}</span>
+    <input type="checkbox" checked={checked} onChange={onChange} className="hidden" />
+  </label>
+);
+
+
+const ActionButton = ({ onClick, children, className = '', color = 'primary', Icon }) => {
+  let baseClasses = "py-3 px-6 rounded-xl font-bold text-base transition-all duration-300 shadow-lg flex items-center justify-center space-x-2 whitespace-nowrap";
+  let colorClasses = '';
+
+  switch (color) {
+    case 'save': // Save Profile / Test Page (Orange/Red Gradient)
+      colorClasses = 'bg-gradient-to-r from-[#ff6347] to-[#e04020] text-white hover:from-[#e04020] hover:to-[#c03010] shadow-[#ff6347]/50';
+      break;
+    case 'clear': // Clear/Neutral (Subtle Gray, slight red hover for clear)
+      colorClasses = 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-red-900/50 hover:text-white shadow-inner shadow-black/30';
+      break;
+    case 'categorize': // Categorize/Action (Purple Gradient)
+      colorClasses = 'bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] text-white hover:from-[#8b5cf6] hover:to-[#7c3aed] shadow-[#a855f7]/50';
+      break;
+    case 'tabwrap': // Tab Wrap (Pink Gradient)
+      colorClasses = 'bg-gradient-to-r from-[#ff0099] to-[#d60080] text-white hover:from-[#e00080] hover:to-[#c20070] shadow-[#ff0099]/50';
+      break;
+    case 'history-pause': // Pause History (Dark Red Glow)
+      colorClasses = 'bg-gray-800 text-red-400 border border-red-700/50 hover:bg-red-900/30 shadow-red-900/50';
+      break;
+    case 'history-resume': // Resume History (Dark Green Glow)
+      colorClasses = 'bg-gray-800 text-green-400 border border-green-700/50 hover:bg-green-900/30 shadow-green-900/50';
+      break;
+    default:
+      colorClasses = 'bg-gray-800 text-white hover:bg-gray-700';
+  }
+
+
+  return (
+    <button 
+      onClick={onClick} 
+      className={`${baseClasses} ${colorClasses} ${className}`}
+    >
+      {Icon && <Icon className="w-5 h-5" />}
+      <span>{children}</span>
+    </button>
+  );
+};
+
+
 
 
 export default function OptionsPage() {
@@ -24,12 +87,22 @@ export default function OptionsPage() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [debugMode, setDebugMode] = useState(false);
   const [debugDate, setDebugDate] = useState('');
+  const [tabWrapLoading, setTabWrapLoading] = useState(false);
+  const [tabWrapReady, setTabWrapReady] = useState(false);
+  const [tabWrapError, setTabWrapError] = useState('');
 
   useEffect(() => {
     chrome.storage.local.get(['db', 'profile', 'historyPaused', 'debugMode', 'debugDate', 'selectedCategories'], (data) => {
       setDb(data.db || {});
-      setProfile(data.profile || { description: '', categories: defaultCategories });
-      setHistoryPaused(!!data.historyPaused);
+      const profileObj = data.profile || { description: '', categories: defaultCategories };
+      setProfile(profileObj);
+      // Pause history if description is empty
+      if (!profileObj.description || profileObj.description.trim() === '') {
+        chrome.storage.local.set({ historyPaused: true });
+        setHistoryPaused(true);
+      } else {
+        setHistoryPaused(!!data.historyPaused);
+      }
       setDebugMode(!!data.debugMode);
       setDebugDate(data.debugDate || '');
       setSelectedCategories(data.selectedCategories || defaultCategories.map(cat => typeof cat === 'string' ? cat : cat.text));
@@ -53,13 +126,25 @@ export default function OptionsPage() {
 
   const saveProfile = () => {
     chrome.storage.local.set({ profile }, async () => {
-      await categorizeEntries(false);
+      // Pause history if textarea is empty, resume if not
+      const textarea = document.querySelector('textarea');
+      const value = textarea ? textarea.value : '';
+      if (!value || value.trim() === '') {
+        chrome.storage.local.set({ historyPaused: true });
+        setHistoryPaused(true);
+      } else {
+        chrome.storage.local.set({ historyPaused: false });
+        setHistoryPaused(false);
+      }
+      await categorizeEntries(true);
     });
   };
 
   const clearProfile = () => {
     chrome.storage.local.remove('profile', async () => {
       setProfile({ description: '', categories: defaultCategories });
+      chrome.storage.local.set({ historyPaused: true });
+      setHistoryPaused(true);
       await categorizeEntries(true);
     });
   };
@@ -75,8 +160,37 @@ export default function OptionsPage() {
 
 
   async function calculateTabWrapSummary() {
-  categorizeEntries(false); // Ensure all entries are categorized first
-  const { db, profile } = await getStorage(['db', 'profile']);
+    setTabWrapLoading(true);
+    setTabWrapReady(false);
+    setTabWrapError('');
+
+    const { db } = await getStorage(['db']);
+    // Calculate totalSeconds before categorization
+    let totalSeconds = 0;
+    for (const date of Object.keys(db || {})) {
+      for (const entry of Object.values(db[date] || {})) {
+        totalSeconds += entry.time || 0;
+      }
+    }
+    if (totalSeconds < 60) {
+      setTabWrapLoading(false);
+      setTabWrapReady(false);
+      setTabWrapError('You have spent less than 5 minutes browsing. Maybe spend some time browsing and try again later.');
+      return;
+    }
+    await categorizeEntries(true); // Ensure all entries are categorized first
+    const { profile } = await getStorage(['db', 'profile']);
+    // Remove all entries categorized as 'miscellaneous' (do not mutate original db)
+    const filteredDb = {};
+    for (const date of Object.keys(db || {})) {
+      for (const [url, entry] of Object.entries(db[date] || {})) {
+        if (entry.category && entry.category.toLowerCase() !== 'miscellaneous') {
+          if (!filteredDb[date]) filteredDb[date] = {};
+          filteredDb[date][url] = { ...entry };
+        }
+      }
+    }
+    // Use filteredDb for all summary calculations below
     const summary = {
       perDay: {},
       totalSeconds: 0,
@@ -88,16 +202,15 @@ export default function OptionsPage() {
       categoryPercents: [],
       topCategoryWebsites: {}, // New field for unique websites per top category
     };
-    let totalSeconds = 0;
     let totalTabs = 0;
     let highestDay = null;
     let highestMinutes = 0;
     const categoryTotals = {};
     // First pass: calculate totals
-    for (const date of Object.keys(db || {})) {
+    for (const date of Object.keys(filteredDb || {})) {
       let daySeconds = 0;
       let dayTabs = 0;
-      for (const entry of Object.values(db[date] || {})) {
+      for (const entry of Object.values(filteredDb[date] || {})) {
         daySeconds += entry.time || 0;
         dayTabs += entry.count || 0;
         if (entry.category) {
@@ -140,8 +253,8 @@ export default function OptionsPage() {
       topPagesByCategory[cat] = [];
     }
     // Collect all entries for each top category
-    for (const date of Object.keys(db || {})) {
-      for (const [url, entry] of Object.entries(db[date] || {})) {
+    for (const date of Object.keys(filteredDb || {})) {
+      for (const [url, entry] of Object.entries(filteredDb[date] || {})) {
         if (top5.includes(entry.category)) {
           topPagesByCategory[entry.category].push({
             title: entry.title || url,
@@ -192,13 +305,12 @@ export default function OptionsPage() {
     // Generalize streak logic for top 5 categories
     summary.topCategoryStreaks = {};
     for (const cat of top5) {
-      if (cat === 'Misc / Uncategorized' || cat === 'miscellaneous') continue;
       let streakArr = [];
       // Build a map of date -> minutes for this category
       const dateMinutes = {};
-      for (const date of Object.keys(db || {})) {
+      for (const date of Object.keys(filteredDb || {})) {
         let seconds = 0;
-        for (const entry of Object.values(db[date] || {})) {
+        for (const entry of Object.values(filteredDb[date] || {})) {
           if (entry.category === cat) {
             seconds += entry.time || 0;
           }
@@ -236,6 +348,8 @@ export default function OptionsPage() {
     }
 
     await setStorage({ tabWrapSummary: summary });
+    setTabWrapLoading(false);
+    setTabWrapReady(true);
     console.log('Tab Wrap summary calculated!');
   }
 
@@ -258,7 +372,12 @@ export default function OptionsPage() {
       for (const [url, entry] of Object.entries(db[date] || {})) {
         if (all || !entry.category) {
           console.log('Checking entry for URL:', url, 'Current category:', entry.category);
-          const prompt = `User description: ${description}\nCategories: ${categories.join(', ')}\nURL: ${url}\nTitle: ${entry.title}\n\nBased on the above, which category was the user spending time on?\nStrictly output only one category from the list above. If none match, output 'miscellaneous'.`;
+          let prompt = '';
+          if (description.trim() !== '') {
+            prompt = `User description: ${description}\nCategories: ${categories.join(', ')}\nURL: ${url}\nTitle: ${entry.title}\n\nBased on the above, which category was the user spending time on?\nStrictly output only one category from the list above`
+          } else {
+            prompt = `\nURL: ${url}\nTitle: ${entry.title}\n\nIf the user was on the above webpage, which category out of ${categories.join(', ')} were they likely spending time on?\nStrictly output only one category from the list provided`;
+          }
           console.log("Asking model with prompt:", prompt);
           try {
             const result = await session.prompt(prompt);
@@ -271,7 +390,6 @@ export default function OptionsPage() {
         }
       }
     }
-  
     session.destroy();
     if (updated) {
       await setStorage({ db });
@@ -281,127 +399,151 @@ export default function OptionsPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      padding: 32,
-      background: '#111',
-      boxSizing: 'border-box',
-      position: 'relative',
-      fontFamily: 'Inter, Arial, sans-serif',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
-    }}>
-      {/* Blurred gradient overlays for tab wrap aesthetic */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 0,
-        pointerEvents: 'none',
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 40,
-          left: 60,
-          width: 220,
-          height: 220,
-          background: 'radial-gradient(circle, #ff2d55 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          opacity: 0.7,
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: 120,
-          right: 40,
-          width: 180,
-          height: 180,
-          background: 'radial-gradient(circle, #a259ff 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          opacity: 0.6,
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: 40,
-          left: 120,
-          width: 160,
-          height: 160,
-          background: 'radial-gradient(circle, #2ecc40 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          opacity: 0.5,
-        }} />
-      </div>
-      <div style={{
-        maxWidth: 700,
-        width: '100%',
-      }}>
-        <h2 style={{
-          color: '#fff',
-          fontWeight: 800,
-          fontSize: 36,
-          letterSpacing: 1,
-          marginBottom: 18,
-          textAlign: 'center',
-          textShadow: '0 2px 12px #a259ff, 0 1px 4px #ff2d55',
-        }}>Tab Wrap Options</h2>
-        <div style={{ marginBottom: 24 }}>
-        <label>
-          <input type="checkbox" checked={debugMode} onChange={handleDebugToggle} /> Debug Mode
-        </label>
-        {debugMode && (
-          <div style={{ marginTop: 8 }}>
-            <label>Set Debug Date: </label>
-            <input
-              type="date"
-              value={debugDate}
-              onChange={handleDebugDateChange}
-              style={{ marginLeft: 8 }}
-            />
-          </div>
-        )}
-      </div>
-  <div style={{ margin: '24px 0', background: 'transparent', borderRadius: 18, padding: 20, color: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
-        <label style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 12, display: 'block', letterSpacing: 1 }}>Tell us about yourself:</label>
-        <textarea
-          value={profile.description}
-          onChange={e => setProfile({ ...profile, description: e.target.value })}
-          style={{
-            width: '100%',
-            minHeight: 60,
-            background: 'transparent',
-            color: '#fff',
-            border: 'none',
-            fontSize: 16,
-            fontFamily: 'inherit',
+    <div className="min-h-screen p-4 sm:p-8 flex flex-col items-center font-sans" style={{ backgroundColor: '#0a0a0a' }}>
+      <NotificationToast />
 
-            outline: 'none',
-            resize: 'vertical',
-          }}
-          placeholder="Share a bit about your work, interests, or browsing habits..."
-        />
+      {/* Background Effect: Cosmic Blur */}
+      <div className="absolute inset-0 overflow-hidden -z-10">
+        {/* Top-left Green Blob (matching Wrap-up) */}
+        <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-green-500 rounded-full mix-blend-lighten filter blur-3xl opacity-10 animate-blob"></div>
+        {/* Top-right Purple Blob (matching Wrap-up) */}
+        <div className="absolute bottom-[-50px] right-[-50px] w-72 h-72 bg-purple-500 rounded-full mix-blend-lighten filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
       </div>
-  {/* Category selection removed. All default categories are always used. */}
-      <div style={{ marginTop: 32 }}>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
-          <button style={{ background: 'white', color: 'rgb(255, 90, 46)', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(46,204,64,0.12)', cursor: 'pointer' }} onClick={saveProfile}>Save Profile</button>
-          <button style={{ background: 'white', color: 'rgb(255, 90, 46)', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(162,89,255,0.12)', cursor: 'pointer' }} onClick={clearProfile}>Clear Profile</button>
-          <button style={{ background: 'white', color: 'rgb(255, 90, 46)', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(79,140,255,0.12)', cursor: 'pointer' }} onClick={() => categorizeEntries(false)}>Categorize</button>
-          <button style={{ background: 'white', color: 'rgb(255, 90, 46)', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(255,45,85,0.12)', cursor: 'pointer' }} onClick={calculateTabWrapSummary}>Tab Wrap</button>
+
+      {/* Main Content Area */}
+      <div className="relative z-10 w-full max-w-2xl p-6 sm:p-10 rounded-3xl bg-gray-900/70 backdrop-blur-md shadow-2xl shadow-black/80 space-y-8 mt-12 mb-12 border border-gray-800">
+        
+        {/* Title */}
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-center uppercase tracking-wider mb-8" style={{ color: 'white', textShadow: '0 0 10px #ff0099, 0 0 20px #a855f7' }}>
+          <span className="text-pink-400">Tab Wrap</span>
+        </h1>
+
+        <hr className="border-t border-gray-700/50" />
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+          <label>
+            <input type="checkbox" checked={debugMode} onChange={handleDebugToggle} /> Debug Mode
+          </label>
+          {debugMode && (
+            <div style={{ marginTop: 8, marginLeft: 16 }}>
+              <label>Set Debug Date: </label>
+              <input
+                type="date"
+                value={debugDate}
+                onChange={handleDebugDateChange}
+                style={{ marginLeft: 8 }}
+              />
+            </div>
+          )}
         </div>
-        {/* Table rendering removed as per user request. */}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 18 }}>
-          <button style={{ background: 'linear-gradient(90deg, #232526 0%, #414345 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.12)', cursor: 'pointer' }} onClick={() => chrome.storage.local.set({ db: {} }, () => setDb({}))}>Clear DB</button>
-          <button style={{ background: 'linear-gradient(90deg, #232526 0%, #ff2d55 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(255,45,85,0.12)', cursor: 'pointer' }} onClick={() => chrome.storage.local.set({ historyPaused: true }, () => setHistoryPaused(true))}>Pause History</button>
-          <button style={{ background: 'linear-gradient(90deg, #232526 0%, #2ecc40 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 24px', fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(46,204,64,0.12)', cursor: 'pointer' }} onClick={() => chrome.storage.local.set({ historyPaused: false }, () => setHistoryPaused(false))}>Resume History</button>
+
+        <div className="space-y-3 pt-4">
+          <label className="flex items-center text-xl font-bold text-white mb-2 tracking-wide">
+            <User className="w-6 h-6 mr-3 text-pink-400" />
+            Tell us about yourself:
+          </label>
+          <textarea
+            value={profile.description}
+            onChange={e => setProfile({ ...profile, description: e.target.value })}
+            rows="4"
+            className="w-full p-4 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 focus:ring-2 focus:ring-[#ff0099] focus:border-[#ff0099] transition-colors resize-none shadow-inner shadow-black/20"
+            placeholder="For example, I am software developer who loves to read about technology, travel the world, and stay updated with the latest news."
+          ></textarea>
         </div>
-      </div>
-      <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
-        <button style={{ background: 'linear-gradient(90deg, #ff2d55 0%, #232526 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 32px', fontWeight: 700, fontSize: 18, boxShadow: '0 2px 8px rgba(255,45,85,0.18)', cursor: 'pointer', marginTop: 24 }} onClick={() => window.location.href = 'test_page.html'}>
-          Go to Test Page
-        </button>
-      </div>
+
+        {/* Primary Action Buttons Grid (Save, Clear, Categorize, Tab Wrap) */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24, flexDirection: 'column', alignItems: 'center' }}>
+        <ActionButton onClick={saveProfile} color="clear" className="sm:col-span-1" Icon={Save}>
+          Save Profile
+        </ActionButton>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+        <ActionButton onClick={() => chrome.storage.local.set({ db: {} }, () => setDb({}))} color="clear" className="sm:col-span-1" Icon={Database}>
+          Clear History
+        </ActionButton>
+          {/* History Toggle */}
+          {historyPaused ? (
+            <ActionButton 
+              onClick={async () => {
+                // Only resume if description exists in storage
+                const { profile: storedProfile } = await new Promise(resolve => chrome.storage.local.get(['profile'], resolve));
+                if (storedProfile && storedProfile.description && storedProfile.description.trim() !== '') {
+                  chrome.storage.local.set({ historyPaused: false }, () => setHistoryPaused(false));
+                } else {
+                  // Glow textarea red for 2 seconds
+                  const textarea = document.querySelector('textarea');
+                  if (textarea) {
+                    textarea.style.boxShadow = '0 0 0 3px #ff2d55';
+                    textarea.style.borderColor = '#ff2d55';
+                    textarea.style.transition = 'box-shadow 0.3s, border-color 0.3s';
+                    setTimeout(() => {
+                      textarea.style.boxShadow = '';
+                      textarea.style.borderColor = '';
+                    }, 2000);
+                  }
+                }
+              }} 
+              color="history-resume" 
+              className="col-span-2" 
+              Icon={Play}
+            >
+            Resume History
+            </ActionButton>
+          ) : (
+            <ActionButton 
+              onClick={() => chrome.storage.local.set({ historyPaused: true }, () => setHistoryPaused(true))} 
+              color="history-pause" 
+              className="col-span-2" 
+              Icon={Pause}
+            >
+              Pause History
+            </ActionButton>
+          )}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24, flexDirection: 'column', alignItems: 'center' }}>
+          <button style={{ background: 'white', color: 'rgb(255, 90, 46)', border: 'none', borderRadius: 12, padding: '10px 32px', fontWeight: 600, fontSize: 18, boxShadow: '0 2px 8px rgba(255,45,85,0.18)', cursor: 'pointer', marginBottom: tabWrapLoading ? 16 : 0 }} onClick={calculateTabWrapSummary} disabled={tabWrapLoading}>Tab Wrap</button>
+          {tabWrapLoading && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 40 }}>
+              <div className="loader" style={{ width: 32, height: 32, border: '4px solid #ff0099', borderTop: '4px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          )}
+          {tabWrapError && !tabWrapLoading && (
+            <div style={{ color: '#ff0099', fontWeight: 600, marginTop: 12, textAlign: 'center', maxWidth: 320 }}>{tabWrapError}</div>
+          )}
+          {tabWrapReady && !tabWrapLoading && (
+            <button style={{ background: 'linear-gradient(90deg, #ff0099 0%, #232526 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 32px', fontWeight: 700, fontSize: 18, boxShadow: '0 2px 8px rgba(255,45,85,0.18)', cursor: 'pointer', marginTop: 16 }} onClick={() => window.location.href = 'tabwrap.html'}>
+              Take me to my Tab Wrap
+            </button>
+          )}
+        </div>
+
+        <hr className="border-t border-gray-800" />
+
+        {/* Tailwind Animation Styles (for cosmic blur) */}
+        <style>{`
+          /* Define custom keyframes for the "cosmic blob" animation */
+          @keyframes blob {
+            0% {
+              transform: translate(0px, 0px) scale(1);
+            }
+            33% {
+              transform: translate(30px, -50px) scale(1.1);
+            }
+            66% {
+              transform: translate(-20px, 20px) scale(0.9);
+            }
+            100% {
+              transform: translate(0px, 0px) scale(1);
+            }
+          }
+          .animate-blob {
+            animation: blob 7s infinite cubic-bezier(0.6, -0.28, 0.735, 0.045);
+          }
+          .animation-delay-2000 {
+            animation-delay: 2s;
+          }
+        `}</style>
       </div>
     </div>
   );

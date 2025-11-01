@@ -50,11 +50,11 @@ function trackUpdatedUrl(url, date) {
   // Add to front
   lastUpdatedEntries.unshift({ url, date });
   console.log('[trackUpdatedUrl] After unshift:', lastUpdatedEntries);
-  // Keep only last 10
-  if (lastUpdatedEntries.length > 10) lastUpdatedEntries = lastUpdatedEntries.slice(0, 10);
+  // Keep only last 3
+  if (lastUpdatedEntries.length > 3) lastUpdatedEntries = lastUpdatedEntries.slice(0, 3);
   console.log('[trackUpdatedUrl] After slice:', lastUpdatedEntries);
   // If exactly 10 unique, trigger categorize
-  if (lastUpdatedEntries.length === 10) {
+  if (lastUpdatedEntries.length === 3) {
     console.log('[trackUpdatedUrl] Triggering categorize with:', lastUpdatedEntries);
     createOffscreenAndCategorize(lastUpdatedEntries.slice());
     lastUpdatedEntries = [];
@@ -170,12 +170,36 @@ function injectAllTabs() {
   });
 }
 
-chrome.runtime.onInstalled.addListener(() => injectAllTabs());
+chrome.runtime.onInstalled.addListener(() => {
+  injectAllTabs();
+  // Save default profile if not present
+  const defaultCategories = [
+    { text: "Work", emoji: "💼", color: "#7e22ce" },
+    { text: "Finance", emoji: "💰", color: "#22c55e" },
+    { text: "Hobbies", emoji: "🎨", color: "#facc15" },
+    { text: "Spirituality", emoji: "🧘", color: "#22d3ee" },
+    { text: "Health", emoji: "🏋️", color: "#ef4444" },
+    { text: "Social Media", emoji: "💬", color: "#ff6347" },
+    { text: "Community", emoji: "🤝", color: "#a259ff" },
+    { text: "Entertainment", emoji: "🎬", color: "#fb923c" },
+    { text: "Shopping", emoji: "🛒", color: "#38bdf8" },
+    { text: "News", emoji: "📰", color: "#2563eb" },
+    { text: "Travel", emoji: "✈️", color: "#f472b6" },
+    { text: "Miscellaneous", emoji: "❓", color: "#d1d5db" }
+  ];
+  chrome.storage.local.get(['profile'], (data) => {
+    if (!data.profile) {
+      chrome.storage.local.set({ profile: { description: '', categories: defaultCategories } });
+    }
+  });
+  // Open options page on install
+  chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
+});
 chrome.runtime.onStartup.addListener(() => injectAllTabs());
 
 // Open the Tab Wrap page as a full tab (not popup) when the toolbar action is clicked
 chrome.action && chrome.action.onClicked && chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('tabwrap.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
 });
 
 // On extension suspend (service worker unload)

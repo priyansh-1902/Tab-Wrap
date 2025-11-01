@@ -6,7 +6,7 @@ createRoot(root).render(
   <CategoryPage
       categoryNames={["Entertainment"]}
       label="SPENT ON ENTERTAINMENT"
-      focusColor="#eab308"
+      focusColor="#fb923c"
       streakTitle="ENTERTAINMENT STREAK"
       streakBarColor="bg-pink-400"
       streakHoverColor="hover:bg-pink-300"
@@ -14,6 +14,6 @@ createRoot(root).render(
       summaryType="entertainment"
       quipDefault="Enjoy responsibly!"
       pageTitle="ENTERTAINMENT CATEGORY SUMMARY"
-      bgColors={["#f472b6", "#fbbf24", "#38bdf8"]}
+      bgColors={["#f472b6", "#fb923c", "#38bdf8"]}
     />
 );

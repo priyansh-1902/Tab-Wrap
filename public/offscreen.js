@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
     }
     const session = await LanguageModel.create();
     console.log('[offscreen] Created LanguageModel session');
-    const description = profile?.description || '';
+    const description = profile?.description || 'No description provided';
     const categories = (profile?.categories || []).map(cat => typeof cat === 'string' ? cat : cat.text);
     let updatedEntries = [];
     for (const entry of entries) {

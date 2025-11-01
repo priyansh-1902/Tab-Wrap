@@ -19,4 +19,4 @@ createRoot(root).render(
     bgColors={["#fbbf24", "#f59e42", "#38bdf8"]}
   />
 );
-createRoot(root).render(<Finance />);
+

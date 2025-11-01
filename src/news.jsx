@@ -6,7 +6,7 @@ createRoot(root).render(
   <CategoryPage
     categoryNames={["News"]}
     label="SPENT ON NEWS"
-    focusColor="#64748b"
+    focusColor="#2563eb"
     streakTitle="NEWS STREAK"
     streakBarColor="bg-blue-400"
     streakHoverColor="hover:bg-blue-300"
@@ -14,6 +14,6 @@ createRoot(root).render(
     summaryType="news"
     quipDefault="Stay informed!"
     pageTitle="NEWS CATEGORY SUMMARY"
-    bgColors={["#38bdf8", "#fbbf24", "#a78bfa"]}
+    bgColors={["#38bdf8", "#2563eb", "#a78bfa"]}
   />
 );
