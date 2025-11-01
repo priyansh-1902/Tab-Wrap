@@ -25,7 +25,7 @@ function TabWrapPage() {
           Ready to see what you've <em>really</em> been up to online? 👀
         </p>
         <p className="text-sm text-gray-400 px-4 italic">
-          (Don't worry, we won't judge... much 😏)
+          (Don't worry, no one will know 🤫)
         </p>
 
         <button

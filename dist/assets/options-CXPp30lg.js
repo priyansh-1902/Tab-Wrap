@@ -1,4 +1,4 @@
-import{c as ne,j as e,r as p}from"./client-uQO10hJn.js";import{c as f}from"./createLucideIcon-C0yB5kjC.js";import{S as V}from"./sparkles-DXWtD5OR.js";/**
+import{c as ne,j as e,r as p}from"./client-yEZ_Fi89.js";import{c as f}from"./createLucideIcon-BG492Xwo.js";import{S as V}from"./sparkles-DyGLS3Ff.js";/**
  * @license lucide-react v0.548.0 - ISC
  *
  * This source code is licensed under the ISC license.
