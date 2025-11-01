@@ -421,7 +421,7 @@ export default function OptionsPage() {
 
         <hr className="border-t border-gray-700/50" />
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+        {/* <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
           <label>
             <input type="checkbox" checked={debugMode} onChange={handleDebugToggle} /> Debug Mode
           </label>
@@ -436,7 +436,7 @@ export default function OptionsPage() {
               />
             </div>
           )}
-        </div>
+        </div> */}
 
         <div className="space-y-3 pt-4">
           <label className="flex items-center text-xl font-bold text-white mb-2 tracking-wide">
